@@ -137,6 +137,18 @@ data class DayStatus(
     @ServerTimestamp val updatedAt: Timestamp? = null
 )
 
+@Keep
+@IgnoreExtraProperties
+data class TaskLog(
+    @DocumentId val id: String = "",
+    val userId: String = "",
+    val workDone: String = "",
+    val category: String = WorkCategory.DEEP_WORK.label,
+    val durationMinutes: Long? = null,
+    @ServerTimestamp val createdAt: Timestamp? = null,
+    @ServerTimestamp val updatedAt: Timestamp? = null
+)
+
 data class AiSuggestedGoal(
     val title: String,
     val targetMinutes: Int,
@@ -175,6 +187,8 @@ object DateKeyUtils {
     private val keyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val displayFormat = SimpleDateFormat("EEE, MMM d", Locale.US)
     private val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
+    private val timeOnlyFormat = SimpleDateFormat("h:mm a", Locale.US)
+    private val dateTimeFormat = SimpleDateFormat("MMM d • h:mm a", Locale.US)
 
     fun todayKey(): String = synchronized(keyFormat) {
         keyFormat.format(Calendar.getInstance().time)
@@ -256,5 +270,18 @@ object DateKeyUtils {
         val mins = (safe % 3600) / 60
         val secs = safe % 60
         return String.format(Locale.US, "%02d:%02d:%02d", hrs, mins, secs)
+    }
+
+    fun formatTimestamp(timestamp: Timestamp?): String {
+        if (timestamp == null) return "Just now"
+        val date = timestamp.toDate()
+        val cal = Calendar.getInstance().apply { time = date }
+        val dayKey = formatKey(cal)
+        val today = todayKey()
+        return when (dayKey) {
+            today -> synchronized(timeOnlyFormat) { "Today • ${timeOnlyFormat.format(date)}" }
+            shiftDays(today, -1) -> synchronized(timeOnlyFormat) { "Yesterday • ${timeOnlyFormat.format(date)}" }
+            else -> synchronized(dateTimeFormat) { dateTimeFormat.format(date) }
+        }
     }
 }

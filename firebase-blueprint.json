@@ -66,6 +66,20 @@
         "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
       },
       "required": ["userId", "dateKey", "freezeUsed", "createdAt", "updatedAt"]
+    },
+    "TaskLog": {
+      "title": "TaskLog",
+      "description": "Quick timestamped work log entry recording completed work.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "workDone": { "type": "string", "description": "Description of work completed (1-500 chars)" },
+        "category": { "type": "string", "description": "Work category" },
+        "durationMinutes": { "type": "integer", "description": "Optional duration in minutes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "workDone", "category", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -84,6 +98,10 @@
     "/users/{userId}/dayStatuses/{dateKey}": {
       "schema": { "$ref": "#/entities/DayStatus" },
       "description": "User streak freeze records per calendar day."
+    },
+    "/users/{userId}/taskLogs/{logId}": {
+      "schema": { "$ref": "#/entities/TaskLog" },
+      "description": "Timestamped quick work log entries."
     }
   }
 }

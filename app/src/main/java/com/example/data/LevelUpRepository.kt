@@ -7,6 +7,7 @@ import com.example.firebase.handleFirestoreError
 import com.example.model.DailyGoal
 import com.example.model.DayStatus
 import com.example.model.GoalTier
+import com.example.model.TaskLog
 import com.example.model.UserProfile
 import com.example.model.WorkSession
 import com.google.firebase.Firebase
@@ -16,6 +17,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -129,6 +131,32 @@ class LevelUpRepository(
                 .map { snapshot ->
                     snapshot.toObjects(
                         DayStatus::class.java,
+                        DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
+                    )
+                }
+                .catch { error ->
+                    val firestoreError = generateSequence(error) { it.cause }
+                        .filterIsInstance<FirebaseFirestoreException>()
+                        .firstOrNull()
+                    if (firestoreError == null && error is CancellationException) throw error
+                    val exceptionToLog = firestoreError ?: (error as? Exception)
+                    if (exceptionToLog != null && auth.currentUser?.uid == uid) {
+                        handleFirestoreError(exceptionToLog, OperationType.LIST, colRef.path)
+                    }
+                    throw error
+                }
+        )
+    }
+
+    fun observeTaskLogs(userId: String): Flow<List<TaskLog>> = flow {
+        val uid = requireUserId(userId)
+        val colRef = userDoc(uid).collection("taskLogs")
+        emitAll(
+            colRef.orderBy("createdAt", Query.Direction.DESCENDING)
+                .snapshots()
+                .map { snapshot ->
+                    snapshot.toObjects(
+                        TaskLog::class.java,
                         DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
                     )
                 }
@@ -428,6 +456,59 @@ class LevelUpRepository(
             throw e
         } catch (e: Exception) {
             handleFirestoreError(e, OperationType.WRITE, docPath)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun addTaskLog(
+        userId: String,
+        workDone: String,
+        category: String,
+        durationMinutes: Int?
+    ): Result<Unit> {
+        var docPath = "users/$userId/taskLogs"
+        return try {
+            val uid = requireUserId(userId)
+            val safeWorkDone = workDone.trim().take(500)
+            require(safeWorkDone.isNotEmpty()) { "Work description cannot be empty." }
+            val safeCategory = category.trim().ifEmpty { "Deep Work" }.take(40)
+            val safeDuration = durationMinutes?.coerceIn(1, 720)?.toLong()
+
+            val docRef = userDoc(uid).collection("taskLogs").document()
+            docPath = docRef.path
+
+            val payload = mapOf(
+                "userId" to uid,
+                "workDone" to safeWorkDone,
+                "category" to safeCategory,
+                "durationMinutes" to safeDuration,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to FieldValue.serverTimestamp()
+            ).filterValues { it != null }
+
+            docRef.set(payload).await()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.CREATE, docPath)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteTaskLog(userId: String, logId: String): Result<Unit> {
+        var docPath = "users/$userId/taskLogs/$logId"
+        return try {
+            val uid = requireUserId(userId)
+            require(logId.isNotBlank()) { "Task log ID must not be blank." }
+            val docRef = userDoc(uid).collection("taskLogs").document(logId)
+            docPath = docRef.path
+            docRef.delete().await()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.DELETE, docPath)
             Result.failure(e)
         }
     }

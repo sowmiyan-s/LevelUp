@@ -72,6 +72,13 @@ service cloud.firestore {
              data.freezeUsed is bool;
     }
 
+    function isValidTaskLog(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.workDone is string && data.workDone.size() >= 1 && data.workDone.size() <= 500 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             (!('durationMinutes' in data) || (data.durationMinutes is int && data.durationMinutes >= 1 && data.durationMinutes <= 720));
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId) && isValidId(userId);
       allow list: if false;
@@ -162,6 +169,29 @@ service cloud.firestore {
                          incoming().diff(existing()).affectedKeys().hasOnly(['freezeUsed', 'updatedAt']);
 
         allow delete: if isOwner(userId) && isValidDateKey(dateKey);
+      }
+
+      match /taskLogs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         incoming().keys().hasAll(['userId', 'workDone', 'category', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'workDone', 'category', 'durationMinutes', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         isValidTaskLog(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         isValidTaskLog(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['workDone', 'category', 'durationMinutes', 'updatedAt']);
+
+        allow delete: if isOwner(userId) && isValidId(logId);
       }
     }
   }

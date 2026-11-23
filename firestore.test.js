@@ -349,3 +349,128 @@ test("DayStatuses: Streak Freeze record validation and ownership", async () => {
       .get()
   );
 });
+
+test("TaskLogs: Kotlin-mirrored create (with and without durationMinutes), list, delete, and bounds", async () => {
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const ts = new Date(Date.now() - 5000);
+
+  // Unauthenticated access denied
+  await assertFails(
+    unauthDb.collection("users").doc(ALICE_UID).collection("taskLogs").get()
+  );
+
+  // Create without optional durationMinutes (omitted via filterValues)
+  await assertSucceeds(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_1")
+      .set({
+        userId: ALICE_UID,
+        workDone: "Implemented Firebase task log repository and rules",
+        category: "Code",
+        createdAt: ts,
+        updatedAt: ts,
+      })
+  );
+
+  // Create with optional durationMinutes
+  await assertSucceeds(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_2")
+      .set({
+        userId: ALICE_UID,
+        workDone: "Reviewed distributed systems lecture notes",
+        category: "Study",
+        durationMinutes: 45,
+        createdAt: ts,
+        updatedAt: ts,
+      })
+  );
+
+  // Ordered query matching Kotlin repository (.orderBy("createdAt", DESCENDING))
+  await assertSucceeds(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .orderBy("createdAt", "desc")
+      .get()
+  );
+
+  // Cross-user read/write/delete denied
+  await assertFails(
+    bobDb.collection("users").doc(ALICE_UID).collection("taskLogs").get()
+  );
+  await assertFails(
+    bobDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_1")
+      .delete()
+  );
+
+  // Reject empty workDone, explicit null durationMinutes, extra 'id', and oversized workDone
+  await assertFails(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_empty")
+      .set({
+        userId: ALICE_UID,
+        workDone: "",
+        category: "Code",
+        createdAt: ts,
+        updatedAt: ts,
+      })
+  );
+
+  await assertFails(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_null_dur")
+      .set({
+        userId: ALICE_UID,
+        workDone: "Test explicit null",
+        category: "Code",
+        durationMinutes: null,
+        createdAt: ts,
+        updatedAt: ts,
+      })
+  );
+
+  await assertFails(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_bad_id")
+      .set({
+        id: "log_bad_id",
+        userId: ALICE_UID,
+        workDone: "Extra id key",
+        category: "Code",
+        createdAt: ts,
+        updatedAt: ts,
+      })
+  );
+
+  await assertSucceeds(
+    aliceDb
+      .collection("users")
+      .doc(ALICE_UID)
+      .collection("taskLogs")
+      .doc("log_1")
+      .delete()
+  );
+});

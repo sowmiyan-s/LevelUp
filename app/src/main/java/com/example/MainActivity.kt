@@ -24,10 +24,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -84,6 +86,7 @@ import com.example.ui.components.LogSessionDialog
 import com.example.ui.screens.CalendarScreen
 import com.example.ui.screens.HomeDashboardScreen
 import com.example.ui.screens.StatsAndShieldScreen
+import com.example.ui.screens.TaskLogScreen
 import com.example.ui.screens.TimelineScreen
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.LevelUpTheme
@@ -102,6 +105,7 @@ private enum class LevelUpDestination(
     val unselectedIcon: ImageVector
 ) {
     HOME("home", "Home", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
+    LOG("log", "Log", Icons.Rounded.EditNote, Icons.Outlined.EditNote),
     TIMELINE("timeline", "Timeline", Icons.Rounded.Schedule, Icons.Outlined.Schedule),
     CALENDAR("calendar", "Calendar", Icons.Rounded.CalendarMonth, Icons.Outlined.CalendarMonth),
     STATS("stats", "Stats", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
@@ -218,6 +222,7 @@ private fun AuthenticatedLevelUpApp(
     val planState by viewModel.planState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
     val coachReplyState by viewModel.coachReplyState.collectAsStateWithLifecycle()
+    val isSavingTaskLog by viewModel.isSavingTaskLog.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
 
     val darkTheme = (dashboardState as? UiState.Success)?.data?.profile?.darkModeEnabled ?: true
@@ -400,6 +405,15 @@ private fun AuthenticatedLevelUpApp(
                                         onClearPlan = viewModel::clearAiPlan,
                                         onOpenCoachChat = { showCoachChatSheet = true },
                                         onNavigateToShieldSettings = { navigateTo(LevelUpDestination.STATS.route) }
+                                    )
+                                }
+
+                                composable(LevelUpDestination.LOG.route) {
+                                    TaskLogScreen(
+                                        summary = summary,
+                                        isSavingLog = isSavingTaskLog,
+                                        onSaveTaskLog = viewModel::addTaskLog,
+                                        onDeleteTaskLog = viewModel::deleteTaskLog
                                     )
                                 }
 

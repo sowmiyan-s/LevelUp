@@ -15,6 +15,7 @@ import com.example.model.DateKeyUtils
 import com.example.model.DayStatus
 import com.example.model.DayTier
 import com.example.model.GoalTier
+import com.example.model.TaskLog
 import com.example.model.UiState
 import com.example.model.UserProfile
 import com.example.model.WorkCategory
@@ -61,6 +62,7 @@ data class DashboardSummary(
     val goals: List<DailyGoal> = emptyList(),
     val sessions: List<WorkSession> = emptyList(),
     val dayStatuses: List<DayStatus> = emptyList(),
+    val taskLogs: List<TaskLog> = emptyList(),
     val todayFocusMinutes: Int = 0,
     val todayCompletionRatio: Float = 0f,
     val isSuperDayToday: Boolean = false,
@@ -143,13 +145,30 @@ class LevelUpViewModel(
                 initialValue = UiState.Loading
             )
 
+    private val taskLogsFlow: StateFlow<UiState<List<TaskLog>>> =
+        repository.observeTaskLogs(currentUserId)
+            .map<List<TaskLog>, UiState<List<TaskLog>>> { UiState.Success(it) }
+            .catch { error ->
+                val firestoreError = unwrapFirestoreException(error)
+                if (firestoreError == null && error is CancellationException) throw error
+                val rootError = firestoreError ?: error
+                Log.w(TAG, "Error observing task logs", rootError)
+                emit(UiState.Error(rootError.message ?: "Failed to load task logs"))
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = UiState.Loading
+            )
+
     val dashboardState: StateFlow<UiState<DashboardSummary>> = combine(
         profileFlow,
         goalsFlow,
         sessionsFlow,
-        dayStatusesFlow
-    ) { profileState, goalsState, sessionsState, statusesState ->
-        val firstError = listOf(profileState, goalsState, sessionsState, statusesState)
+        dayStatusesFlow,
+        taskLogsFlow
+    ) { profileState, goalsState, sessionsState, statusesState, taskLogsState ->
+        val firstError = listOf(profileState, goalsState, sessionsState, statusesState, taskLogsState)
             .filterIsInstance<UiState.Error>()
             .firstOrNull()
         if (firstError != null) {
@@ -158,14 +177,16 @@ class LevelUpViewModel(
             profileState is UiState.Success &&
             goalsState is UiState.Success &&
             sessionsState is UiState.Success &&
-            statusesState is UiState.Success
+            statusesState is UiState.Success &&
+            taskLogsState is UiState.Success
         ) {
             UiState.Success(
                 buildDashboardSummary(
                     profile = profileState.data,
                     goals = goalsState.data,
                     sessions = sessionsState.data,
-                    dayStatuses = statusesState.data
+                    dayStatuses = statusesState.data,
+                    taskLogs = taskLogsState.data
                 )
             )
         } else {
@@ -191,6 +212,9 @@ class LevelUpViewModel(
 
     private val _coachReplyState = MutableStateFlow<AiCoachState>(AiCoachState.Idle)
     val coachReplyState: StateFlow<AiCoachState> = _coachReplyState.asStateFlow()
+
+    private val _isSavingTaskLog = MutableStateFlow(false)
+    val isSavingTaskLog: StateFlow<Boolean> = _isSavingTaskLog.asStateFlow()
 
     private val _feedbackMessage = MutableStateFlow<String?>(null)
     val feedbackMessage: StateFlow<String?> = _feedbackMessage.asStateFlow()
@@ -434,6 +458,45 @@ class LevelUpViewModel(
         }
     }
 
+    fun addTaskLog(
+        workDone: String,
+        category: String,
+        durationMinutes: Int?,
+        onSuccess: () -> Unit
+    ) {
+        if (_isSavingTaskLog.value) return
+        viewModelScope.launch {
+            _isSavingTaskLog.value = true
+            try {
+                val result = repository.addTaskLog(
+                    userId = currentUserId,
+                    workDone = workDone,
+                    category = category,
+                    durationMinutes = durationMinutes
+                )
+                if (result.isSuccess) {
+                    _feedbackMessage.value = "Work log saved."
+                    onSuccess()
+                } else {
+                    _feedbackMessage.value =
+                        result.exceptionOrNull()?.localizedMessage ?: "Failed to save work log."
+                }
+            } finally {
+                _isSavingTaskLog.value = false
+            }
+        }
+    }
+
+    fun deleteTaskLog(logId: String) {
+        viewModelScope.launch {
+            val result = repository.deleteTaskLog(currentUserId, logId)
+            if (result.isFailure) {
+                _feedbackMessage.value =
+                    result.exceptionOrNull()?.localizedMessage ?: "Failed to delete work log."
+            }
+        }
+    }
+
     // --- Hero AI Focus Coach (Firebase AI Logic) ---
 
     fun generateHeroBriefing() {
@@ -618,7 +681,8 @@ class LevelUpViewModel(
         profile: UserProfile,
         goals: List<DailyGoal>,
         sessions: List<WorkSession>,
-        dayStatuses: List<DayStatus>
+        dayStatuses: List<DayStatus>,
+        taskLogs: List<TaskLog>
     ): DashboardSummary {
         val today = DateKeyUtils.todayKey()
         val todayGoals = goals.filter { it.dateKey == today }
@@ -698,6 +762,7 @@ class LevelUpViewModel(
             goals = goals,
             sessions = sessions,
             dayStatuses = dayStatuses,
+            taskLogs = taskLogs,
             todayFocusMinutes = todayMinutes,
             todayCompletionRatio = ratio,
             isSuperDayToday = superToday,

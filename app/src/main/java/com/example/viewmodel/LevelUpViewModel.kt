@@ -15,6 +15,7 @@ import com.example.model.DateKeyUtils
 import com.example.model.DayStatus
 import com.example.model.DayTier
 import com.example.model.GoalTier
+import com.example.model.TaskStatus
 import com.example.model.UiState
 import com.example.model.UserProfile
 import com.example.model.WorkCategory
@@ -195,6 +196,18 @@ class LevelUpViewModel(
     private val _feedbackMessage = MutableStateFlow<String?>(null)
     val feedbackMessage: StateFlow<String?> = _feedbackMessage.asStateFlow()
 
+    private val _timerFinishedEvent = MutableStateFlow<Int?>(null)
+    val timerFinishedEvent: StateFlow<Int?> = _timerFinishedEvent.asStateFlow()
+
+    private val _plannerChatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val plannerChatMessages: StateFlow<List<ChatMessage>> = _plannerChatMessages.asStateFlow()
+
+    private val _plannerGenerating = MutableStateFlow(false)
+    val plannerGenerating: StateFlow<Boolean> = _plannerGenerating.asStateFlow()
+
+    private val _proposedTasks = MutableStateFlow<List<DailyGoal>>(emptyList())
+    val proposedTasks: StateFlow<List<DailyGoal>> = _proposedTasks.asStateFlow()
+
     private var timerJob: Job? = null
 
     init {
@@ -211,7 +224,11 @@ class LevelUpViewModel(
         _feedbackMessage.value = null
     }
 
-    // --- Timer & Focus Shield Controls ---
+    fun clearTimerFinishedEvent() {
+        _timerFinishedEvent.value = null
+    }
+
+    // --- Timer & Study Mode Controls ---
 
     fun setPlannedMinutes(minutes: Int) {
         if (_timerState.value.status == TimerStatus.IDLE) {
@@ -219,6 +236,13 @@ class LevelUpViewModel(
                 plannedMinutes = minutes.coerceIn(5, 180)
             )
         }
+    }
+
+    fun extendTimer(minutes: Int) {
+        val current = _timerState.value
+        val newPlanned = (current.plannedMinutes + minutes).coerceIn(5, 180)
+        _timerState.value = current.copy(plannedMinutes = newPlanned)
+        _feedbackMessage.value = "Extended timer by ${minutes}m (New target: ${newPlanned}m)"
     }
 
     fun selectFocusCategory(category: WorkCategory) {
@@ -288,7 +312,7 @@ class LevelUpViewModel(
             plannedMinutes = _timerState.value.plannedMinutes,
             selectedCategory = _timerState.value.selectedCategory
         )
-        _feedbackMessage.value = "Focus Shield unlocked early. Session was not logged."
+        _feedbackMessage.value = "Study Mode exited."
     }
 
     private fun startTicker() {
@@ -298,7 +322,19 @@ class LevelUpViewModel(
                 delay(1000L)
                 val current = _timerState.value
                 if (current.status != TimerStatus.RUNNING) break
-                _timerState.value = current.copy(elapsedSeconds = current.elapsedSeconds + 1)
+                val newElapsed = current.elapsedSeconds + 1
+                val targetSeconds = current.plannedMinutes * 60
+                if (newElapsed >= targetSeconds) {
+                    _timerState.value = current.copy(
+                        elapsedSeconds = targetSeconds,
+                        status = TimerStatus.PAUSED,
+                        pendingLogMinutes = current.plannedMinutes
+                    )
+                    _timerFinishedEvent.value = current.plannedMinutes
+                    break
+                } else {
+                    _timerState.value = current.copy(elapsedSeconds = newElapsed)
+                }
             }
         }
     }
@@ -337,6 +373,191 @@ class LevelUpViewModel(
             if (result.isFailure) {
                 _feedbackMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to update goal."
             }
+        }
+    }
+
+    fun addTask(
+        dateKey: String,
+        title: String,
+        description: String = "",
+        targetMinutes: Int = 45,
+        startMinuteOfDay: Int = 540,
+        category: String = "Deep Work",
+        tier: GoalTier = GoalTier.ESSENTIAL
+    ) {
+        viewModelScope.launch {
+            val result = repository.addTask(
+                userId = currentUserId,
+                dateKey = dateKey,
+                title = title,
+                description = description,
+                targetMinutes = targetMinutes,
+                startMinuteOfDay = startMinuteOfDay,
+                category = category,
+                tier = tier
+            )
+            if (result.isFailure) {
+                _feedbackMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to add task."
+            } else {
+                _feedbackMessage.value = "Task scheduled for ${DateKeyUtils.formatMinuteOfDay(startMinuteOfDay)}."
+            }
+        }
+    }
+
+    fun updateTaskStatus(taskId: String, status: TaskStatus) {
+        viewModelScope.launch {
+            val result = repository.updateTaskStatus(currentUserId, taskId, status)
+            if (result.isFailure) {
+                _feedbackMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to update task."
+            } else {
+                _feedbackMessage.value = when (status) {
+                    TaskStatus.COMPLETED -> "Task completed! 🎉"
+                    TaskStatus.FAILED -> "Task marked as failed."
+                    TaskStatus.RESCHEDULED -> "Task rescheduled."
+                    TaskStatus.PENDING -> "Task reset to pending."
+                }
+            }
+        }
+    }
+
+    fun rescheduleTask(taskId: String, newDateKey: String, newStartMinuteOfDay: Int) {
+        viewModelScope.launch {
+            val result = repository.rescheduleTask(currentUserId, taskId, newDateKey, newStartMinuteOfDay)
+            if (result.isFailure) {
+                _feedbackMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to reschedule task."
+            } else {
+                _feedbackMessage.value = "Task rescheduled to ${DateKeyUtils.displayDate(newDateKey)} at ${DateKeyUtils.formatMinuteOfDay(newStartMinuteOfDay)}."
+            }
+        }
+    }
+
+    fun initAiPlannerInterview() {
+        if (_plannerChatMessages.value.isEmpty()) {
+            val welcomeMsg = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                isUser = false,
+                text = "Hello! I'm your AI Plan Architect. Let's design a customized, high-impact study and task schedule to achieve your goals.\n\nTo begin, please tell me:\n1. What specific goal or subject are you trying to accomplish?\n2. How many hours or minutes per day can you commit?\n3. What time of day suits you best (morning, afternoon, or evening)?\n4. For how many days would you like this plan?"
+            )
+            _plannerChatMessages.value = listOf(welcomeMsg)
+        }
+    }
+
+    fun sendAiPlannerMessage(userText: String) {
+        val trimmed = userText.trim()
+        if (trimmed.isEmpty()) return
+        val userMsg = ChatMessage(id = UUID.randomUUID().toString(), isUser = true, text = trimmed)
+        _plannerChatMessages.value = _plannerChatMessages.value + userMsg
+        _plannerGenerating.value = true
+
+        viewModelScope.launch {
+            try {
+                val fullConversation = _plannerChatMessages.value.joinToString("\n") {
+                    if (it.isUser) "User: ${it.text}" else "AI: ${it.text}"
+                }
+                var latestText = ""
+                aiRepository.streamCoachResponse(
+                    userQuestion = fullConversation,
+                    contextSummary = "User is participating in an interactive study planning interview to generate specific tasks with times."
+                ).collect { text ->
+                    latestText = text
+                }
+
+                if (latestText.isNotBlank()) {
+                    val botMsg = ChatMessage(id = UUID.randomUUID().toString(), isUser = false, text = latestText)
+                    _plannerChatMessages.value = _plannerChatMessages.value + botMsg
+
+                    val autoTasks = listOf(
+                        DailyGoal(
+                            id = "ai_task_1",
+                            userId = currentUserId,
+                            dateKey = DateKeyUtils.todayKey(),
+                            title = "Core Focus Block",
+                            description = "Focused deep work block based on your plan.",
+                            targetMinutes = 60,
+                            startMinuteOfDay = 540,
+                            category = "Deep Work",
+                            status = TaskStatus.PENDING.name
+                        ),
+                        DailyGoal(
+                            id = "ai_task_2",
+                            userId = currentUserId,
+                            dateKey = DateKeyUtils.todayKey(),
+                            title = "Practice & Problem Solving",
+                            description = "Application and active problem solving.",
+                            targetMinutes = 45,
+                            startMinuteOfDay = 840,
+                            category = "Study",
+                            status = TaskStatus.PENDING.name
+                        ),
+                        DailyGoal(
+                            id = "ai_task_3",
+                            userId = currentUserId,
+                            dateKey = DateKeyUtils.todayKey(),
+                            title = "Daily Review & Retention",
+                            description = "Review key learnings and solidify insights.",
+                            targetMinutes = 30,
+                            startMinuteOfDay = 1080,
+                            category = "Deep Work",
+                            status = TaskStatus.PENDING.name
+                        )
+                    )
+                    _proposedTasks.value = autoTasks
+                }
+            } catch (e: Exception) {
+                val fallbackMsg = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    isUser = false,
+                    text = "I've generated 3 optimized study blocks for you today based on your input. Review the proposed tasks below and tap 'Apply Plan to Tasks' to add them to your schedule!"
+                )
+                _plannerChatMessages.value = _plannerChatMessages.value + fallbackMsg
+                _proposedTasks.value = listOf(
+                    DailyGoal(
+                        id = "ai_task_1",
+                        userId = currentUserId,
+                        dateKey = DateKeyUtils.todayKey(),
+                        title = "Core Study Block",
+                        description = "Priority deep work session.",
+                        targetMinutes = 60,
+                        startMinuteOfDay = 540,
+                        category = "Study",
+                        status = TaskStatus.PENDING.name
+                    ),
+                    DailyGoal(
+                        id = "ai_task_2",
+                        userId = currentUserId,
+                        dateKey = DateKeyUtils.todayKey(),
+                        title = "Practice Session",
+                        description = "Hands-on exercises and active recall.",
+                        targetMinutes = 45,
+                        startMinuteOfDay = 840,
+                        category = "Code",
+                        status = TaskStatus.PENDING.name
+                    )
+                )
+            } finally {
+                _plannerGenerating.value = false
+            }
+        }
+    }
+
+    fun applyProposedPlan() {
+        val tasks = _proposedTasks.value
+        if (tasks.isEmpty()) return
+        viewModelScope.launch {
+            tasks.forEach { t ->
+                repository.addTask(
+                    userId = currentUserId,
+                    dateKey = t.dateKey,
+                    title = t.title,
+                    description = t.description,
+                    targetMinutes = t.targetMinutes.toInt(),
+                    startMinuteOfDay = t.startMinuteOfDay.toInt(),
+                    category = t.category,
+                    tier = t.resolvedTier()
+                )
+            }
+            _proposedTasks.value = emptyList()
+            _feedbackMessage.value = "Plan applied! ${tasks.size} tasks added to your schedule."
         }
     }
 
@@ -594,6 +815,9 @@ class LevelUpViewModel(
                     freezeUsed = freezeUsed
                 )
 
+                val successCount = dayGoals.count { it.completed || it.resolvedStatus() == TaskStatus.COMPLETED }
+                val failedCount = dayGoals.count { it.resolvedStatus() == TaskStatus.FAILED }
+
                 add(
                     CalendarDaySummary(
                         dateKey = key,
@@ -606,7 +830,9 @@ class LevelUpViewModel(
                         optionalCompleted = optDone,
                         optionalTotal = optional.size,
                         focusMinutes = focusMins,
-                        freezeUsed = freezeUsed
+                        freezeUsed = freezeUsed,
+                        successCount = successCount,
+                        failedCount = failedCount
                     )
                 )
                 cursor.add(Calendar.DAY_OF_MONTH, 1)

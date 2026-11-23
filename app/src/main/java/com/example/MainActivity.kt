@@ -77,16 +77,19 @@ import com.example.data.LevelUpRepository
 import com.example.firebase.configureAppCheck
 import com.example.model.DateKeyUtils
 import com.example.model.UiState
-import com.example.ui.components.AddGoalDialog
+import com.example.model.WorkCategory
+import com.example.ui.components.AddTaskDialog
 import com.example.ui.components.AiCoachChatBottomSheet
+import com.example.ui.components.AiPlanArchitectBottomSheet
 import com.example.ui.components.FocusShieldOverlayDialog
 import com.example.ui.components.LogSessionDialog
 import com.example.ui.screens.CalendarScreen
 import com.example.ui.screens.HomeDashboardScreen
-import com.example.ui.screens.StatsAndShieldScreen
-import com.example.ui.screens.TimelineScreen
+import com.example.ui.screens.InsightsScreen
+import com.example.ui.screens.TasksScreen
 import com.example.ui.theme.ForestGreen
 import com.example.ui.theme.LevelUpTheme
+import com.example.util.NotificationHelper
 import com.example.viewmodel.DashboardSummary
 import com.example.viewmodel.LevelUpViewModel
 import com.google.firebase.Firebase
@@ -100,16 +103,19 @@ private enum class LevelUpDestination(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    HOME("home", "Study", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
-    TIMELINE("timeline", "Timeline", Icons.Rounded.Schedule, Icons.Outlined.Schedule),
+    HOME("home", "Home", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
+    TASKS("tasks", "Tasks", Icons.Rounded.Schedule, Icons.Outlined.Schedule),
     CALENDAR("calendar", "Calendar", Icons.Rounded.CalendarMonth, Icons.Outlined.CalendarMonth),
-    STATS("stats", "Settings", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
+    INSIGHTS("insights", "Insights", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Create high-priority notification channel for study mode completion
+        NotificationHelper.createNotificationChannel(this)
 
         // Must run before setContent, ViewModels, or any Firebase operation.
         configureAppCheck(this, intent)
@@ -225,6 +231,7 @@ private fun AuthenticatedLevelUpApp(
     userEmail: String?,
     onSignOut: () -> Unit
 ) {
+    val context = LocalContext.current
     val viewModel: LevelUpViewModel = viewModel(
         key = currentUserId,
         factory = viewModelFactory {
@@ -263,6 +270,10 @@ private fun AuthenticatedLevelUpApp(
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
     val coachReplyState by viewModel.coachReplyState.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
+    val timerFinishedEvent by viewModel.timerFinishedEvent.collectAsStateWithLifecycle()
+    val plannerChatMessages by viewModel.plannerChatMessages.collectAsStateWithLifecycle()
+    val plannerGenerating by viewModel.plannerGenerating.collectAsStateWithLifecycle()
+    val proposedTasks by viewModel.proposedTasks.collectAsStateWithLifecycle()
 
     val darkTheme = (dashboardState as? UiState.Success)?.data?.profile?.darkModeEnabled ?: true
     val snackbarHostState = remember { SnackbarHostState() }
@@ -275,7 +286,16 @@ private fun AuthenticatedLevelUpApp(
         }
     }
 
-    var showAddGoalDialog by remember { mutableStateOf(false) }
+    // Strong alert notification and vibration when study timer completes
+    LaunchedEffect(timerFinishedEvent) {
+        val minutes = timerFinishedEvent
+        if (minutes != null) {
+            NotificationHelper.triggerStrongTimerAlert(context, minutes, timerState.selectedCategory.label)
+        }
+    }
+
+    var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showAiPlannerSheet by remember { mutableStateOf(false) }
     var manualLogDateKey by remember { mutableStateOf<String?>(null) }
     var showCoachChatSheet by remember { mutableStateOf(false) }
 
@@ -379,7 +399,7 @@ private fun AuthenticatedLevelUpApp(
                                     CircularProgressIndicator(color = ForestGreen)
                                     Spacer(Modifier.height(12.dp))
                                     Text(
-                                        text = "Syncing focus data...",
+                                        text = "Syncing study routines...",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -437,9 +457,16 @@ private fun AuthenticatedLevelUpApp(
                                         onPauseStudyMode = viewModel::pauseStudyMode,
                                         onStopAndLog = viewModel::requestStopAndLog,
                                         onOpenShieldOverlay = { viewModel.setShieldOverlayExpanded(true) },
-                                        onOpenAddGoal = { showAddGoalDialog = true },
+                                        onExtendTimer = viewModel::extendTimer,
+                                        onOpenAddGoal = { showAddTaskDialog = true },
                                         onToggleGoal = viewModel::toggleGoal,
                                         onDeleteGoal = viewModel::deleteGoal,
+                                        onStartTaskStudy = { task ->
+                                            viewModel.setPlannedMinutes(task.targetMinutes.toInt())
+                                            viewModel.selectFocusCategory(WorkCategory.fromLabel(task.category))
+                                            viewModel.selectLinkedGoal(task.id)
+                                            viewModel.startStudyMode()
+                                        },
                                         onUpdateBlockedApps = { updatedApps ->
                                             viewModel.updateProfileSettings(
                                                 summary.profile.dailyTargetMinutes,
@@ -448,29 +475,50 @@ private fun AuthenticatedLevelUpApp(
                                                 summary.profile.hapticsEnabled
                                             )
                                         },
-                                        onNavigateToSettings = { navigateTo(LevelUpDestination.STATS.route) }
+                                        onNavigateToTasks = { navigateTo(LevelUpDestination.TASKS.route) }
                                     )
                                 }
 
-                                composable(LevelUpDestination.TIMELINE.route) {
-                                    TimelineScreen(
+                                composable(LevelUpDestination.TASKS.route) {
+                                    TasksScreen(
                                         summary = summary,
-                                        onOpenManualLog = { dateKey -> manualLogDateKey = dateKey },
-                                        onUpdateSessionNotes = viewModel::updateSessionNotes,
-                                        onDeleteSession = viewModel::deleteSession
+                                        onAddTask = { title, desc, mins, startMin, cat, tier ->
+                                            viewModel.addTask(
+                                                dateKey = DateKeyUtils.todayKey(),
+                                                title = title,
+                                                description = desc,
+                                                targetMinutes = mins,
+                                                startMinuteOfDay = startMin,
+                                                category = cat,
+                                                tier = tier
+                                            )
+                                        },
+                                        onUpdateTaskStatus = viewModel::updateTaskStatus,
+                                        onRescheduleTask = viewModel::rescheduleTask,
+                                        onDeleteTask = viewModel::deleteGoal,
+                                        onStartStudyWithTask = { task ->
+                                            viewModel.setPlannedMinutes(task.targetMinutes.toInt())
+                                            viewModel.selectFocusCategory(WorkCategory.fromLabel(task.category))
+                                            viewModel.selectLinkedGoal(task.id)
+                                            viewModel.startStudyMode()
+                                            navigateTo(LevelUpDestination.HOME.route)
+                                        },
+                                        onOpenAiPlanner = {
+                                            viewModel.initAiPlannerInterview()
+                                            showAiPlannerSheet = true
+                                        }
                                     )
                                 }
 
                                 composable(LevelUpDestination.CALENDAR.route) {
                                     CalendarScreen(
                                         summary = summary,
-                                        buildMonthCells = viewModel::buildCalendarMonth,
-                                        onApplyStreakFreeze = viewModel::applyStreakFreeze
+                                        buildMonthCells = viewModel::buildCalendarMonth
                                     )
                                 }
 
-                                composable(LevelUpDestination.STATS.route) {
-                                    StatsAndShieldScreen(
+                                composable(LevelUpDestination.INSIGHTS.route) {
+                                    InsightsScreen(
                                         summary = summary,
                                         userEmail = userEmail,
                                         onUpdateSettings = viewModel::updateProfileSettings,
@@ -495,26 +543,43 @@ private fun AuthenticatedLevelUpApp(
             }
 
             // Dialogs & Sheets
-            if (showAddGoalDialog) {
-                AddGoalDialog(
-                    onDismiss = { showAddGoalDialog = false },
-                    onSave = { title, minutes, category, tier ->
-                        viewModel.addGoal(
+            if (showAddTaskDialog) {
+                AddTaskDialog(
+                    initialDateKey = DateKeyUtils.todayKey(),
+                    onDismiss = { showAddTaskDialog = false },
+                    onSave = { title, desc, durationMins, startMin, category, tier ->
+                        viewModel.addTask(
                             dateKey = DateKeyUtils.todayKey(),
                             title = title,
-                            targetMinutes = minutes,
+                            description = desc,
+                            targetMinutes = durationMins,
+                            startMinuteOfDay = startMin,
                             category = category,
                             tier = tier
                         )
-                        showAddGoalDialog = false
+                        showAddTaskDialog = false
                     }
+                )
+            }
+
+            if (showAiPlannerSheet) {
+                AiPlanArchitectBottomSheet(
+                    chatMessages = plannerChatMessages,
+                    proposedTasks = proposedTasks,
+                    isGenerating = plannerGenerating,
+                    onSendMessage = viewModel::sendAiPlannerMessage,
+                    onApplyPlan = {
+                        viewModel.applyProposedPlan()
+                        showAiPlannerSheet = false
+                    },
+                    onDismiss = { showAiPlannerSheet = false }
                 )
             }
 
             val pendingTimerMins = timerState.pendingLogMinutes
             if (pendingTimerMins != null) {
                 LogSessionDialog(
-                    initialTitle = "${timerState.selectedCategory.label} Focus Sprint",
+                    initialTitle = "${timerState.selectedCategory.label} Study Block",
                     initialDurationMinutes = pendingTimerMins,
                     initialStartMinute = timerState.startMinuteOfDay,
                     initialCategory = timerState.selectedCategory,

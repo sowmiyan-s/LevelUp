@@ -34,6 +34,18 @@ enum class GoalTier {
     }
 }
 
+enum class TaskStatus {
+    PENDING,
+    COMPLETED,
+    FAILED,
+    RESCHEDULED;
+
+    companion object {
+        fun fromRaw(raw: String): TaskStatus =
+            entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: PENDING
+    }
+}
+
 enum class DayTier {
     SUPER_DAY,
     TARGET_ACHIEVED,
@@ -85,14 +97,18 @@ data class DailyGoal(
     val userId: String = "",
     val dateKey: String = "",
     val title: String = "",
+    val description: String = "",
     val targetMinutes: Long = 60L,
+    val startMinuteOfDay: Long = 540L,
     val category: String = WorkCategory.DEEP_WORK.label,
     val tier: String = GoalTier.ESSENTIAL.name,
+    val status: String = TaskStatus.PENDING.name,
     val completed: Boolean = false,
     @ServerTimestamp val createdAt: Timestamp? = null,
     @ServerTimestamp val updatedAt: Timestamp? = null
 ) {
     fun resolvedTier(): GoalTier = GoalTier.fromRaw(tier)
+    fun resolvedStatus(): TaskStatus = TaskStatus.fromRaw(status)
 }
 
 @Keep
@@ -155,13 +171,21 @@ data class CalendarDaySummary(
     val optionalCompleted: Int,
     val optionalTotal: Int,
     val focusMinutes: Int,
-    val freezeUsed: Boolean
+    val freezeUsed: Boolean,
+    val successCount: Int = 0,
+    val failedCount: Int = 0
 )
 
 object DateKeyUtils {
     private val keyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val displayFormat = SimpleDateFormat("EEE, MMM d", Locale.US)
     private val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
+    private val fullDateHeaderFormat = SimpleDateFormat("dd / MM / yyyy • EEEE", Locale.US)
+
+    fun formatDateHeader(dateKey: String): String {
+        val cal = parseKey(dateKey)
+        return synchronized(fullDateHeaderFormat) { fullDateHeaderFormat.format(cal.time) }
+    }
 
     fun todayKey(): String = synchronized(keyFormat) {
         keyFormat.format(Calendar.getInstance().time)

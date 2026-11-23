@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,16 +21,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,7 +40,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -56,16 +59,19 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.model.DailyGoal
 import com.example.model.DateKeyUtils
-import com.example.model.GoalTier
+import com.example.model.TaskStatus
 import com.example.model.WorkCategory
 import com.example.ui.components.AddBlockedAppDialog
 import com.example.ui.components.InteractiveFocusDial
+import com.example.ui.components.bioTechGridPattern
 import com.example.ui.theme.AmberStreak
 import com.example.ui.theme.DarkBackground
 import com.example.ui.theme.ForestGreen
 import com.example.ui.theme.RoseError
+import com.example.util.InstalledAppsHelper
 import com.example.viewmodel.DashboardSummary
 import com.example.viewmodel.TimerUiState
+import java.util.Calendar
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -78,21 +84,42 @@ fun HomeDashboardScreen(
     onPauseStudyMode: () -> Unit,
     onStopAndLog: () -> Unit,
     onOpenShieldOverlay: () -> Unit,
+    onExtendTimer: (Int) -> Unit,
     onOpenAddGoal: () -> Unit,
     onToggleGoal: (DailyGoal) -> Unit,
     onDeleteGoal: (String) -> Unit,
+    onStartTaskStudy: (DailyGoal) -> Unit,
     onUpdateBlockedApps: (List<String>) -> Unit,
-    onNavigateToSettings: () -> Unit,
+    onNavigateToTasks: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val today = DateKeyUtils.todayKey()
     val todayGoals = summary.goals.filter { it.dateKey == today }
-    val completedCount = todayGoals.count { it.completed }
+    val completedCount = todayGoals.count { it.completed || it.resolvedStatus() == TaskStatus.COMPLETED }
     val haptics = LocalHapticFeedback.current
     var showAddAppDialog by remember { mutableStateOf(false) }
 
+    // Active Task Detection
+    val currentMinute = remember {
+        val cal = Calendar.getInstance()
+        cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+    }
+    val activeTask = remember(todayGoals, currentMinute) {
+        todayGoals.firstOrNull { goal ->
+            !goal.completed && goal.resolvedStatus() == TaskStatus.PENDING &&
+                    currentMinute >= goal.startMinuteOfDay &&
+                    currentMinute <= (goal.startMinuteOfDay + goal.targetMinutes)
+        } ?: todayGoals.firstOrNull { goal ->
+            !goal.completed && goal.resolvedStatus() == TaskStatus.PENDING &&
+                    goal.startMinuteOfDay in currentMinute..(currentMinute + 30)
+        }
+    }
+
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .bioTechGridPattern(),
         contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
@@ -100,9 +127,9 @@ fun HomeDashboardScreen(
                 .fillMaxSize()
                 .widthIn(max = 680.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Top Status Header: Date & Streak Badge
+            // Header: Clean Date and Streak Pill (no freeze counts)
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -111,41 +138,136 @@ fun HomeDashboardScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Today",
-                            style = MaterialTheme.typography.headlineLarge,
+                            text = DateKeyUtils.formatDateHeader(today),
+                            style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = DateKeyUtils.displayDate(today),
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Daily Focus & Study Command",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    // Streak Pill
+                    // Consecutive Day Streak Pill
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = AmberStreak.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = AmberStreak.copy(alpha = 0.15f),
                         border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.4f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.LocalFireDepartment,
                                 contentDescription = "Streak",
                                 tint = AmberStreak,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = "${summary.currentStreak} day streak",
-                                style = MaterialTheme.typography.labelLarge,
+                                text = "${summary.currentStreak} Day Streak",
+                                style = MaterialTheme.typography.labelMedium,
                                 color = AmberStreak,
                                 fontWeight = FontWeight.Bold
                             )
+                        }
+                    }
+                }
+            }
+
+            // Active Task Banner Alert
+            if (activeTask != null) {
+                item {
+                    val isRunningNow = currentMinute >= activeTask.startMinuteOfDay &&
+                            currentMinute <= (activeTask.startMinuteOfDay + activeTask.targetMinutes)
+                    val endMinute = activeTask.startMinuteOfDay + activeTask.targetMinutes
+
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = ForestGreen.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(ForestGreen.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Bolt,
+                                        contentDescription = null,
+                                        tint = ForestGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                Column {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isRunningNow) "ACTIVE TASK NOW" else "UPCOMING TASK",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ForestGreen
+                                        )
+                                        Text(
+                                            text = "• ${DateKeyUtils.formatMinuteOfDay(activeTask.startMinuteOfDay.toInt())} - ${DateKeyUtils.formatMinuteOfDay(endMinute.toInt())}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = activeTask.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (activeTask.description.isNotBlank()) {
+                                        Text(
+                                            text = activeTask.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Button(
+                                onClick = { onStartTaskStudy(activeTask) },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = ForestGreen,
+                                    contentColor = DarkBackground
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.height(38.dp)
+                            ) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Study Now", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -164,19 +286,20 @@ fun HomeDashboardScreen(
                     onPause = onPauseStudyMode,
                     onResume = onStartStudyMode,
                     onStopAndLog = onStopAndLog,
-                    onOpenShieldOverlay = onOpenShieldOverlay
+                    onOpenShieldOverlay = onOpenShieldOverlay,
+                    onExtendTimer = onExtendTimer
                 )
             }
 
-            // Today's Study Goals Card
+            // Today's Tasks Vault Card
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,37 +307,39 @@ fun HomeDashboardScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Today's Goals",
+                                    text = "Today's Tasks",
                                     style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (todayGoals.isEmpty()) "No goals set for today"
+                                    text = if (todayGoals.isEmpty()) "No tasks scheduled today"
                                     else "$completedCount of ${todayGoals.size} completed",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
-                            Button(
-                                onClick = onOpenAddGoal,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = ForestGreen,
-                                    contentColor = DarkBackground
-                                ),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                                modifier = Modifier.height(38.dp)
-                            ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Add Goal", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Button(
+                                    onClick = onOpenAddGoal,
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ForestGreen,
+                                        contentColor = DarkBackground
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Add Task", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                         }
 
                         if (todayGoals.isNotEmpty()) {
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(12.dp))
                             val completionRatio = completedCount.toFloat() / todayGoals.size.toFloat()
                             LinearProgressIndicator(
                                 progress = { completionRatio },
@@ -226,8 +351,8 @@ fun HomeDashboardScreen(
                                     .clip(RoundedCornerShape(3.dp))
                             )
 
-                            Spacer(Modifier.height(14.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Spacer(Modifier.height(12.dp))
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 todayGoals.forEach { goal ->
                                     GoalRowCard(
                                         goal = goal,
@@ -242,34 +367,50 @@ fun HomeDashboardScreen(
                                 }
                             }
                         } else {
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(12.dp))
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = "Tap '+ Add Goal' above to set your study priorities for today.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(16.dp)
-                                )
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "No tasks set for today.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Button(
+                                        onClick = onNavigateToTasks,
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = ForestGreen.copy(alpha = 0.15f),
+                                            contentColor = ForestGreen
+                                        ),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("Open Schedule", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Apps Blocked in Study Mode Card (with Add App functionality)
+            // Study Mode Blocked Apps Quick Card (with Real App Icons)
             item {
                 val blockedApps = summary.profile.shieldedApps
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -277,11 +418,11 @@ fun HomeDashboardScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(32.dp)
                                         .clip(CircleShape)
                                         .background(ForestGreen.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center
@@ -290,95 +431,117 @@ fun HomeDashboardScreen(
                                         imageVector = Icons.Rounded.Shield,
                                         contentDescription = null,
                                         tint = ForestGreen,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                                 Column {
                                     Text(
-                                        text = "Apps Blocked in Study Mode",
+                                        text = "Study Mode Lockdown",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "${blockedApps.size} apps will be shielded while studying",
+                                        text = "${blockedApps.size} apps blocked during sessions",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
 
-                            OutlinedButton(
+                            Button(
                                 onClick = { showAddAppDialog = true },
                                 shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = ForestGreen.copy(alpha = 0.15f),
+                                    contentColor = ForestGreen
+                                ),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                 modifier = Modifier.height(34.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Add App", color = ForestGreen, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                Text("Add", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
                         }
 
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(12.dp))
 
                         if (blockedApps.isNotEmpty()) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                blockedApps.forEach { app ->
+                                blockedApps.forEach { appName ->
+                                    val appInfo = remember(appName) { InstalledAppsHelper.getAppInfo(context, appName) }
+
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            if (appInfo.iconBitmap != null) {
+                                                Image(
+                                                    bitmap = appInfo.iconBitmap,
+                                                    contentDescription = appName,
+                                                    modifier = Modifier.size(20.dp).clip(RoundedCornerShape(4.dp))
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Shield,
+                                                    contentDescription = null,
+                                                    tint = ForestGreen,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                            }
                                             Text(
-                                                text = app,
-                                                style = MaterialTheme.typography.labelMedium,
+                                                text = appInfo.appName,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 fontWeight = FontWeight.Medium
                                             )
-                                            Spacer(Modifier.width(6.dp))
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = "Remove $app",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier
-                                                    .size(14.dp)
-                                                    .clickable {
-                                                        val updated = blockedApps - app
-                                                        onUpdateBlockedApps(updated)
-                                                    }
-                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            IconButton(
+                                                onClick = {
+                                                    val updated = blockedApps.filterNot { it.equals(appName, ignoreCase = true) }
+                                                    onUpdateBlockedApps(updated)
+                                                },
+                                                modifier = Modifier.size(20.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = "Remove $appName",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         } else {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "No apps blocked. Tap '+ Add App' to block distracting apps during Study Mode.",
+                                    text = "No apps blocked. Tap '+ Add' above to block social and distracting apps during Study Mode.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(14.dp)
+                                    modifier = Modifier.padding(12.dp)
                                 )
                             }
                         }
                     }
                 }
             }
-
-            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 
@@ -387,9 +550,8 @@ fun HomeDashboardScreen(
             currentBlockedApps = summary.profile.shieldedApps,
             onDismiss = { showAddAppDialog = false },
             onAddApp = { newApp ->
-                if (!summary.profile.shieldedApps.contains(newApp)) {
-                    val updated = summary.profile.shieldedApps + newApp
-                    onUpdateBlockedApps(updated)
+                if (summary.profile.shieldedApps.none { it.equals(newApp, ignoreCase = true) }) {
+                    onUpdateBlockedApps(summary.profile.shieldedApps + newApp)
                 }
             }
         )
@@ -402,82 +564,80 @@ private fun GoalRowCard(
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isDone = goal.completed
+    val isCompleted = goal.completed || goal.resolvedStatus() == TaskStatus.COMPLETED
+
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = if (isDone) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isCompleted) {
+            ForestGreen.copy(alpha = 0.08f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        },
         border = BorderStroke(
-            1.dp,
-            if (isDone) ForestGreen.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            width = 1.dp,
+            color = if (isCompleted) ForestGreen.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
         ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onToggle)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable { onToggle() }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(
-                onClick = onToggle,
-                modifier = Modifier.size(32.dp)
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Icon(
-                    imageVector = if (isDone) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                    contentDescription = if (isDone) "Mark not completed" else "Mark completed",
-                    tint = if (isDone) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
+                    imageVector = if (isCompleted) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = if (isCompleted) "Completed" else "Pending",
+                    tint = if (isCompleted) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
-            }
 
-            Spacer(Modifier.width(10.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = goal.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None,
-                    fontWeight = if (isDone) FontWeight.Normal else FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(3.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column {
                     Text(
-                        text = "${goal.category} • ${goal.targetMinutes}m",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = goal.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isCompleted) {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null
                     )
-                    if (goal.resolvedTier() == GoalTier.OPTIONAL) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = AmberStreak.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                text = "Bonus",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = AmberStreak,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "${DateKeyUtils.formatMinuteOfDay(goal.startMinuteOfDay.toInt())} • ${goal.targetMinutes}m",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "• ${goal.category}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ForestGreen
+                        )
                     }
                 }
             }
 
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(28.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.DeleteOutline,
-                    contentDescription = "Delete goal",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(18.dp)
+                    contentDescription = "Delete task",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

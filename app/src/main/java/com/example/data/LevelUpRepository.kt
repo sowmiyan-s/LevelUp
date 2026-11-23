@@ -9,6 +9,7 @@ import com.example.model.DailyGoal
 import com.example.model.DateKeyUtils
 import com.example.model.DayStatus
 import com.example.model.GoalTier
+import com.example.model.TaskStatus
 import com.example.model.UserProfile
 import com.example.model.WorkSession
 import com.google.firebase.Firebase
@@ -293,28 +294,51 @@ class LevelUpRepository(
         targetMinutes: Int,
         category: String,
         tier: GoalTier
+    ): Result<Unit> = addTask(
+        userId = userId,
+        dateKey = dateKey,
+        title = title,
+        description = "",
+        targetMinutes = targetMinutes,
+        startMinuteOfDay = 540,
+        category = category,
+        tier = tier
+    )
+
+    suspend fun addTask(
+        userId: String,
+        dateKey: String,
+        title: String,
+        description: String = "",
+        targetMinutes: Int = 45,
+        startMinuteOfDay: Int = 540,
+        category: String = "Deep Work",
+        tier: GoalTier = GoalTier.ESSENTIAL
     ): Result<Unit> {
         if (userId == GUEST_USER_ID) {
             val trimmedTitle = title.trim().take(120)
-            require(trimmedTitle.isNotEmpty()) { "Goal title cannot be empty." }
-            val newGoal = DailyGoal(
-                id = "guest_goal_${UUID.randomUUID().toString().take(8)}",
+            require(trimmedTitle.isNotEmpty()) { "Task title cannot be empty." }
+            val newTask = DailyGoal(
+                id = "guest_task_${UUID.randomUUID().toString().take(8)}",
                 userId = GUEST_USER_ID,
                 dateKey = dateKey,
                 title = trimmedTitle,
+                description = description.trim().take(500),
                 targetMinutes = targetMinutes.coerceIn(5, 600).toLong(),
+                startMinuteOfDay = startMinuteOfDay.toLong(),
                 category = category.trim().ifEmpty { "Deep Work" }.take(40),
                 tier = tier.name,
+                status = TaskStatus.PENDING.name,
                 completed = false
             )
-            guestGoals.value = guestGoals.value + newGoal
+            guestGoals.value = guestGoals.value + newTask
             return Result.success(Unit)
         }
         var docPath = "users/$userId/goals"
         return try {
             val uid = requireUserId(userId)
             val trimmedTitle = title.trim().take(120)
-            require(trimmedTitle.isNotEmpty()) { "Goal title cannot be empty." }
+            require(trimmedTitle.isNotEmpty()) { "Task title cannot be empty." }
             require(dateKey.matches(Regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))) { "Invalid date format." }
             val safeMinutes = targetMinutes.coerceIn(5, 600).toLong()
             val safeCategory = category.trim().ifEmpty { "Deep Work" }.take(40)
@@ -325,9 +349,12 @@ class LevelUpRepository(
                 "userId" to uid,
                 "dateKey" to dateKey,
                 "title" to trimmedTitle,
+                "description" to description.trim().take(500),
                 "targetMinutes" to safeMinutes,
+                "startMinuteOfDay" to startMinuteOfDay.toLong(),
                 "category" to safeCategory,
                 "tier" to tier.name,
+                "status" to TaskStatus.PENDING.name,
                 "completed" to false,
                 "createdAt" to FieldValue.serverTimestamp(),
                 "updatedAt" to FieldValue.serverTimestamp()
@@ -338,6 +365,81 @@ class LevelUpRepository(
             throw e
         } catch (e: Exception) {
             handleFirestoreError(e, OperationType.CREATE, docPath)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateTaskStatus(
+        userId: String,
+        taskId: String,
+        status: TaskStatus
+    ): Result<Unit> {
+        val isCompleted = status == TaskStatus.COMPLETED
+        if (userId == GUEST_USER_ID) {
+            guestGoals.value = guestGoals.value.map {
+                if (it.id == taskId) it.copy(status = status.name, completed = isCompleted) else it
+            }
+            return Result.success(Unit)
+        }
+        var docPath = "users/$userId/goals/$taskId"
+        return try {
+            val uid = requireUserId(userId)
+            require(taskId.isNotBlank()) { "Task ID must not be blank." }
+            val docRef = userDoc(uid).collection("goals").document(taskId)
+            docPath = docRef.path
+            docRef.update(
+                mapOf(
+                    "status" to status.name,
+                    "completed" to isCompleted,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            ).await()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.UPDATE, docPath)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rescheduleTask(
+        userId: String,
+        taskId: String,
+        newDateKey: String,
+        newStartMinuteOfDay: Int
+    ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            guestGoals.value = guestGoals.value.map {
+                if (it.id == taskId) it.copy(
+                    dateKey = newDateKey,
+                    startMinuteOfDay = newStartMinuteOfDay.toLong(),
+                    status = TaskStatus.RESCHEDULED.name,
+                    completed = false
+                ) else it
+            }
+            return Result.success(Unit)
+        }
+        var docPath = "users/$userId/goals/$taskId"
+        return try {
+            val uid = requireUserId(userId)
+            require(taskId.isNotBlank()) { "Task ID must not be blank." }
+            val docRef = userDoc(uid).collection("goals").document(taskId)
+            docPath = docRef.path
+            docRef.update(
+                mapOf(
+                    "dateKey" to newDateKey,
+                    "startMinuteOfDay" to newStartMinuteOfDay.toLong(),
+                    "status" to TaskStatus.RESCHEDULED.name,
+                    "completed" to false,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            ).await()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.UPDATE, docPath)
             Result.failure(e)
         }
     }

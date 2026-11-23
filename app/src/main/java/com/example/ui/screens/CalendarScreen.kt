@@ -506,18 +506,19 @@ private fun LegendDot(label: String, color: Color) {
 @Composable
 private fun DayStatTile(label: String, value: String, accentColor: Color = ForestGreen, modifier: Modifier = Modifier) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         modifier = modifier
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
                 color = accentColor,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,

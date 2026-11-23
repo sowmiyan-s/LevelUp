@@ -1,6 +1,12 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -202,10 +208,22 @@ fun HomeDashboardScreen(
                             currentMinute <= (activeTask.startMinuteOfDay + activeTask.targetMinutes)
                     val endMinute = activeTask.startMinuteOfDay + activeTask.targetMinutes
 
+                    // 21st.dev Radar Beacon Pulse animation
+                    val beaconTransition = rememberInfiniteTransition(label = "beacon")
+                    val beaconPulse by beaconTransition.animateFloat(
+                        initialValue = 0.25f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "beaconPulse"
+                    )
+
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = AmberStreak.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.5f)),
+                        border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.35f + beaconPulse * 0.25f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -224,7 +242,7 @@ fun HomeDashboardScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(AmberStreak.copy(alpha = 0.2f)),
+                                        .background(AmberStreak.copy(alpha = 0.12f + beaconPulse * 0.12f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -242,9 +260,9 @@ fun HomeDashboardScreen(
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(6.dp)
+                                                .size(7.dp)
                                                 .clip(CircleShape)
-                                                .background(AmberStreak)
+                                                .background(AmberStreak.copy(alpha = beaconPulse))
                                         )
                                         Text(
                                             text = if (isRunningNow) "ACTIVE TASK NOW" else "UPCOMING TASK",

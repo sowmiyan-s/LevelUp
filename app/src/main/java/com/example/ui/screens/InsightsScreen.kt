@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -42,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -219,6 +224,19 @@ fun InsightsScreen(
 
             // Weekly Study Activity Card
             item {
+                var barAnimTrigger by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    barAnimTrigger = true
+                }
+                val barAnimProgress by animateFloatAsState(
+                    targetValue = if (barAnimTrigger) 1f else 0f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "WeeklyBarAnim"
+                )
+
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
@@ -248,6 +266,7 @@ fun InsightsScreen(
 
                         val maxMinutes = weeklyData.maxOfOrNull { it.second }?.coerceAtLeast(60) ?: 60
                         val barColor = ForestGreen
+                        val barHighlightColor = Color(0xFF66BB6A)
                         val emptyBarColor = MaterialTheme.colorScheme.surfaceVariant
 
                         Canvas(
@@ -261,9 +280,10 @@ fun InsightsScreen(
 
                             weeklyData.forEachIndexed { index, pair ->
                                 val xCenter = slotWidth * index + slotWidth / 2f
-                                val barHeight = if (maxMinutes > 0) {
+                                val targetHeight = if (maxMinutes > 0) {
                                     (pair.second.toFloat() / maxMinutes.toFloat()) * maxBarHeight
                                 } else 0f
+                                val barHeight = targetHeight * barAnimProgress
 
                                 val left = xCenter - barWidth / 2f
                                 val top = maxBarHeight - barHeight
@@ -277,7 +297,11 @@ fun InsightsScreen(
 
                                 if (barHeight > 4f) {
                                     drawRoundRect(
-                                        color = barColor,
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(barHighlightColor, barColor),
+                                            startY = top,
+                                            endY = maxBarHeight
+                                        ),
                                         topLeft = Offset(left, top),
                                         size = Size(barWidth, barHeight),
                                         cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
@@ -289,7 +313,8 @@ fun InsightsScreen(
                         Spacer(Modifier.height(6.dp))
 
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            weeklyData.forEach { (label, mins) ->
+                            weeklyData.forEachIndexed { index, (label, mins) ->
+                                val isToday = index == weeklyData.lastIndex
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -297,8 +322,8 @@ fun InsightsScreen(
                                     Text(
                                         text = label,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.Medium
+                                        color = if (isToday) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium
                                     )
                                     Text(
                                         text = if (mins > 0) "${mins}m" else "-",
@@ -306,6 +331,15 @@ fun InsightsScreen(
                                         color = if (mins > 0) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                         fontWeight = FontWeight.Bold
                                     )
+                                    if (isToday) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 2.dp)
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(ForestGreen)
+                                        )
+                                    }
                                 }
                             }
                         }

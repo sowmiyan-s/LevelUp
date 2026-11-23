@@ -1,7 +1,13 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -22,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
@@ -113,6 +120,27 @@ fun InteractiveFocusDial(
         targetValue = dialProgress,
         animationSpec = spring(),
         label = "dialProgress"
+    )
+
+    // Breathing Ambient Glow Pulse (21st.dev kinetic design)
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = if (timerState.status == TimerStatus.RUNNING) 0.15f else 0.05f,
+        targetValue = if (timerState.status == TimerStatus.RUNNING) 0.38f else 0.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+    val pulseRadiusFactor by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseRadius"
     )
 
     val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -223,6 +251,27 @@ fun InteractiveFocusDial(
                     val inset = strokeWidth / 2f + 10.dp.toPx()
                     val arcSize = Size(size.width - inset * 2f, size.height - inset * 2f)
                     val topLeft = Offset(inset, inset)
+                    val centerX = size.width / 2f
+                    val centerY = size.height / 2f
+                    val center = Offset(centerX, centerY)
+                    val arcRadius = (size.width - inset * 2f) / 2f
+
+                    // Ethereal Breathing Aura Glow (when timer is running)
+                    if (timerState.status == TimerStatus.RUNNING) {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    progressColor.copy(alpha = pulseAlpha),
+                                    progressColor.copy(alpha = pulseAlpha * 0.3f),
+                                    Color.Transparent
+                                ),
+                                center = center,
+                                radius = (size.width / 2f) * pulseRadiusFactor
+                            ),
+                            radius = (size.width / 2f) * pulseRadiusFactor,
+                            center = center
+                        )
+                    }
 
                     // 270° Recessed Track (starts at 135°, sweeps 270°)
                     drawArc(
@@ -234,6 +283,31 @@ fun InteractiveFocusDial(
                         size = arcSize,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
+
+                    // Swiss Precision Chronometer Tick Marks (18 ticks along 270° sweep)
+                    for (tickIdx in 0..18) {
+                        val tickAngleDeg = 135f + tickIdx * (270f / 18f)
+                        val tickAngleRad = Math.toRadians(tickAngleDeg.toDouble())
+                        val isMajor = tickIdx % 3 == 0
+                        val tickLen = if (isMajor) 7.dp.toPx() else 3.5.dp.toPx()
+                        val rOuter = arcRadius - strokeWidth / 2f - 4.dp.toPx()
+                        val rInner = rOuter - tickLen
+
+                        val startX = centerX + rOuter * cos(tickAngleRad).toFloat()
+                        val startY = centerY + rOuter * sin(tickAngleRad).toFloat()
+                        val endX = centerX + rInner * cos(tickAngleRad).toFloat()
+                        val endY = centerY + rInner * sin(tickAngleRad).toFloat()
+
+                        val tickFraction = tickIdx.toFloat() / 18f
+                        val tickPassed = tickFraction <= animatedProgress
+                        drawLine(
+                            color = if (tickPassed) progressColor.copy(alpha = 0.75f) else trackColor.copy(alpha = 0.5f),
+                            start = Offset(startX, startY),
+                            end = Offset(endX, endY),
+                            strokeWidth = if (isMajor) 2.dp.toPx() else 1.2.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
 
                     // Active Progress Arc
                     val activeSweep = (animatedProgress * 270f).coerceIn(2f, 270f)
@@ -250,9 +324,6 @@ fun InteractiveFocusDial(
                     // Glowing Terminator Knob
                     val knobAngleDeg = 135f + activeSweep
                     val knobAngleRad = Math.toRadians(knobAngleDeg.toDouble())
-                    val centerX = size.width / 2f
-                    val centerY = size.height / 2f
-                    val arcRadius = (size.width - inset * 2f) / 2f
                     val knobX = centerX + arcRadius * cos(knobAngleRad).toFloat()
                     val knobY = centerY + arcRadius * sin(knobAngleRad).toFloat()
                     val knobCenter = Offset(knobX, knobY)

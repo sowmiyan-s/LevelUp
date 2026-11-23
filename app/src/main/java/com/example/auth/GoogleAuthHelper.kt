@@ -60,13 +60,16 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.example.R
-import com.example.ui.theme.Crimson500
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Emerald700
-import com.example.ui.theme.Emerald900
-import com.example.ui.theme.Emerald950
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.DarkOnSurface
+import com.example.ui.theme.DarkOnSurfaceMuted
+import com.example.ui.theme.DarkOnSurfaceSubtle
+import com.example.ui.theme.DarkOutline
+import com.example.ui.theme.DarkSurface
+import com.example.ui.theme.DarkSurfaceElevated
+import com.example.ui.theme.ForestGreen
 import com.example.ui.theme.Mint200
-import com.example.ui.theme.Mint400
+import com.example.ui.theme.RoseError
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -198,131 +201,96 @@ fun AuthScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Emerald950, Emerald900, Color(0xFF042218))
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .widthIn(max = 520.dp)
+                .padding(horizontal = 28.dp, vertical = 32.dp)
+                .widthIn(max = 440.dp)
                 .align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Hero Visual Banner
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .border(1.dp, Mint400.copy(alpha = 0.28f), RoundedCornerShape(28.dp))
+            // Elegant brand emblem
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = ForestGreen.copy(alpha = 0.12f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen.copy(alpha = 0.35f)),
+                modifier = Modifier.size(64.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_hero_ai_coach),
-                    contentDescription = "Level Up Bio-Tech Focus Artwork",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Emerald950.copy(alpha = 0.25f),
-                                    Emerald950.copy(alpha = 0.85f)
-                                )
-                            )
-                        )
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(20.dp)
-                ) {
-                    Surface(
-                        color = Emerald500.copy(alpha = 0.22f),
-                        shape = RoundedCornerShape(50),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Mint400.copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AutoAwesome,
-                                contentDescription = null,
-                                tint = Mint400,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "FLOW & CLARITY",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Mint200
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text(
-                        text = "Level Up",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_levelup_brand),
+                        contentDescription = "Level Up emblem",
+                        tint = ForestGreen,
+                        modifier = Modifier.size(36.dp)
                     )
-                    Text(
-                        text = "Daily Work Logger & AI Focus Shield",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Mint200
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            Text(
+                text = "Level Up",
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = "Focus on meaningful work and build lasting consistency.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(28.dp))
+
+            // Clean overview card
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    AuthFeatureItem(
+                        icon = Icons.Rounded.Bolt,
+                        title = "Tactile Focus Timer",
+                        description = "Smooth dial timer feeding your daily 24-hour work timeline"
+                    )
+                    AuthFeatureItem(
+                        icon = Icons.Rounded.AutoAwesome,
+                        title = "Focus Coach",
+                        description = "Contextual daily briefings and structured day plans"
+                    )
+                    AuthFeatureItem(
+                        icon = Icons.Rounded.Shield,
+                        title = "Focus Shield & Streaks",
+                        description = "Distraction barriers and multi-tier streak tracking"
                     )
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // Value Pillars
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AuthFeatureRow(
-                    icon = Icons.Rounded.AutoAwesome,
-                    title = "Hero AI Focus Coach",
-                    subtitle = "Live Gemini briefings & smart daily work-block plans"
-                )
-                AuthFeatureRow(
-                    icon = Icons.Rounded.Bolt,
-                    title = "Interactive Focus Dial",
-                    subtitle = "Sweep-gradient timer feeding your 24-hour work timeline"
-                )
-                AuthFeatureRow(
-                    icon = Icons.Rounded.Shield,
-                    title = "Focus Shield & 4-Tier Streaks",
-                    subtitle = "Distraction lock mode with Super Day & Streak Freeze tracking"
-                )
-                AuthFeatureRow(
-                    icon = Icons.Rounded.CalendarMonth,
-                    title = "Cloud-Synced Consistency",
-                    subtitle = "Your goals, logs, and calendar history backed up securely"
-                )
-            }
-
-            Spacer(Modifier.height(28.dp))
-
             if (errorMessage != null) {
                 Surface(
-                    color = Crimson500.copy(alpha = 0.16f),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Crimson500.copy(alpha = 0.4f)),
+                    color = RoseError.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, RoseError.copy(alpha = 0.4f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 14.dp)
+                        .padding(bottom = 16.dp)
                 ) {
                     Text(
                         text = errorMessage.orEmpty(),
@@ -334,6 +302,7 @@ fun AuthScreen(
                 }
             }
 
+            // Primary Google Sign In button
             Button(
                 onClick = {
                     errorMessage = null
@@ -356,63 +325,64 @@ fun AuthScreen(
                     )
                 },
                 enabled = !isLoading,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Emerald500,
-                    contentColor = Emerald950
+                    containerColor = ForestGreen,
+                    contentColor = DarkBackground
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(52.dp)
                     .testTag("google_sign_in_button")
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = Emerald950,
-                        strokeWidth = 2.5.dp
+                        modifier = Modifier.size(20.dp),
+                        color = DarkBackground,
+                        strokeWidth = 2.dp
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = "Signing in...",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 } else {
                     Text(
                         text = "Sign in with Google",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
 
             Spacer(Modifier.height(10.dp))
 
+            // Secondary Guest Mode button
             androidx.compose.material3.OutlinedButton(
                 onClick = onContinueAsGuest,
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Mint400.copy(alpha = 0.45f)),
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Mint200
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(48.dp)
                     .testTag("guest_mode_button")
             ) {
                 Text(
-                    text = "Continue as Guest (Demo Mode)",
+                    text = "Continue as Guest",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
             Text(
-                text = "Sign in to sync your work timeline, focus goals, and streak shield across sessions.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Mint200.copy(alpha = 0.7f),
+                text = "Guest mode works entirely offline. Sign in to sync across devices.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }
@@ -420,48 +390,41 @@ fun AuthScreen(
 }
 
 @Composable
-private fun AuthFeatureRow(
+private fun AuthFeatureItem(
     icon: ImageVector,
     title: String,
-    subtitle: String
+    description: String
 ) {
-    Surface(
-        color = Emerald900.copy(alpha = 0.75f),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Emerald700.copy(alpha = 0.6f)),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(ForestGreen.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Emerald500.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Mint400,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Mint200.copy(alpha = 0.75f)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = ForestGreen,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

@@ -50,12 +50,12 @@ import androidx.compose.ui.unit.dp
 import com.example.model.CalendarDaySummary
 import com.example.model.DateKeyUtils
 import com.example.model.DayTier
-import com.example.ui.theme.Amber500
-import com.example.ui.theme.Crimson500
-import com.example.ui.theme.Cyan400
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Emerald950
-import com.example.ui.theme.Gold400
+import com.example.ui.theme.AmberStreak
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.ForestGreen
+import com.example.ui.theme.GoldSuperDay
+import com.example.ui.theme.RoseError
+import com.example.ui.theme.SkyFreeze
 import com.example.viewmodel.DashboardSummary
 import java.util.Calendar
 
@@ -92,14 +92,15 @@ fun CalendarScreen(
             item {
                 Column {
                     Text(
-                        text = "4-TIER CONSISTENCY MATRIX",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        text = "Calendar",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Global Calendar",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onBackground
+                        text = "Monthly consistency & streak status",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -107,9 +108,9 @@ fun CalendarScreen(
             // Month Switcher
             item {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -128,15 +129,16 @@ fun CalendarScreen(
                                     currentMonth -= 1
                                 }
                             },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Previous month")
                         }
 
                         Text(
                             text = DateKeyUtils.monthYearLabel(currentYear, currentMonth),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
                         )
 
                         IconButton(
@@ -148,7 +150,7 @@ fun CalendarScreen(
                                     currentMonth += 1
                                 }
                             },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Next month")
                         }
@@ -159,15 +161,15 @@ fun CalendarScreen(
             // Calendar Grid Card
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         // Weekday Headers
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { day ->
+                            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
                                 Text(
                                     text = day,
                                     style = MaterialTheme.typography.labelSmall,
@@ -185,7 +187,7 @@ fun CalendarScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 3.dp),
+                                    .padding(vertical = 2.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 week.forEach { cell ->
@@ -202,18 +204,17 @@ fun CalendarScreen(
                 }
             }
 
-            // 4-Tier + Freeze Legend
+            // Legend
             item {
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LegendDot("Super Day (100%+Bonus)", Gold400)
-                    LegendDot("Target Achieved (100%)", Emerald500)
-                    LegendDot("Partial (50-99%)", Amber500)
-                    LegendDot("Needs Attention (<50%)", Crimson500)
-                    LegendDot("Streak Freeze", Cyan400)
+                    LegendDot("Super Day", GoldSuperDay)
+                    LegendDot("Goal Achieved", ForestGreen)
+                    LegendDot("Partial", AmberStreak)
+                    LegendDot("Streak Freeze", SkyFreeze)
                 }
             }
 
@@ -221,12 +222,12 @@ fun CalendarScreen(
             if (selectedDay != null) {
                 item {
                     Surface(
-                        shape = RoundedCornerShape(22.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, tierColor(selectedDay.tier).copy(alpha = 0.6f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -235,8 +236,9 @@ fun CalendarScreen(
                                 Column {
                                     Text(
                                         text = DateKeyUtils.displayDate(selectedDay.dateKey),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
                                         text = selectedDay.dateKey,
@@ -245,14 +247,15 @@ fun CalendarScreen(
                                     )
                                 }
                                 Surface(
-                                    color = tierColor(selectedDay.tier).copy(alpha = 0.18f),
-                                    shape = RoundedCornerShape(50)
+                                    color = tierColor(selectedDay.tier).copy(alpha = 0.12f),
+                                    shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
                                         text = tierLabel(selectedDay.tier),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = tierColor(selectedDay.tier),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                     )
                                 }
                             }
@@ -260,7 +263,7 @@ fun CalendarScreen(
                             Spacer(Modifier.height(14.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 DayStatTile(
                                     label = "Focus Logged",
@@ -268,12 +271,12 @@ fun CalendarScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                                 DayStatTile(
-                                    label = "Essential Goals",
+                                    label = "Essential",
                                     value = "${selectedDay.essentialCompleted}/${selectedDay.essentialTotal}",
                                     modifier = Modifier.weight(1f)
                                 )
                                 DayStatTile(
-                                    label = "Bonus Goals",
+                                    label = "Bonus",
                                     value = "${selectedDay.optionalCompleted}/${selectedDay.optionalTotal}",
                                     modifier = Modifier.weight(1f)
                                 )
@@ -288,21 +291,22 @@ fun CalendarScreen(
                                 Spacer(Modifier.height(14.dp))
                                 Button(
                                     onClick = { onApplyStreakFreeze(selectedDay.dateKey) },
-                                    shape = RoundedCornerShape(14.dp),
+                                    shape = RoundedCornerShape(12.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Cyan400,
-                                        contentColor = Emerald950
+                                        containerColor = SkyFreeze,
+                                        contentColor = DarkBackground
                                     ),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(48.dp)
+                                        .height(44.dp)
                                         .testTag("apply_streak_freeze_button")
                                 ) {
-                                    Icon(Icons.Rounded.AcUnit, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Rounded.AcUnit, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = "Protect Day with Streak Freeze (${summary.profile.streakFreezes} left)",
-                                        fontWeight = FontWeight.Bold
+                                        text = "Apply Streak Freeze (${summary.profile.streakFreezes} left)",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             }
@@ -324,19 +328,19 @@ private fun CalendarDayCell(
     modifier: Modifier = Modifier
 ) {
     val badgeColor = tierColor(cell.tier)
-    val bgAlpha = when {
-        !cell.inCurrentMonth -> 0.08f
-        cell.tier == DayTier.NO_GOALS || cell.tier == DayTier.UPCOMING -> 0.14f
-        else -> 0.25f
-    }
+    val hasActivity = cell.tier != DayTier.NO_GOALS && cell.tier != DayTier.UPCOMING
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = badgeColor.copy(alpha = bgAlpha),
+        shape = RoundedCornerShape(8.dp),
+        color = if (isSelected) {
+            ForestGreen.copy(alpha = 0.12f)
+        } else if (hasActivity) {
+            badgeColor.copy(alpha = 0.08f)
+        } else {
+            Color.Transparent
+        },
         border = if (isSelected) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
-        } else if (cell.tier != DayTier.NO_GOALS && cell.tier != DayTier.UPCOMING) {
-            BorderStroke(1.dp, badgeColor.copy(alpha = 0.55f))
+            BorderStroke(1.5.dp, ForestGreen)
         } else {
             null
         },
@@ -351,18 +355,18 @@ private fun CalendarDayCell(
         ) {
             Text(
                 text = cell.dayOfMonth.toString(),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = if (cell.inCurrentMonth) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                 }
             )
-            if (cell.tier != DayTier.NO_GOALS && cell.tier != DayTier.UPCOMING) {
-                Spacer(Modifier.height(3.dp))
+            if (hasActivity) {
+                Spacer(Modifier.height(2.dp))
                 Box(
                     modifier = Modifier
-                        .size(7.dp)
+                        .size(5.dp)
                         .clip(CircleShape)
                         .background(badgeColor)
                 )
@@ -376,14 +380,14 @@ private fun LegendDot(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(10.dp)
+                .size(7.dp)
                 .clip(CircleShape)
                 .background(color)
         )
         Spacer(Modifier.width(6.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -397,10 +401,10 @@ private fun DayStatTile(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = modifier
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(10.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
@@ -411,27 +415,27 @@ private fun DayStatTile(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
 
 private fun tierColor(tier: DayTier): Color = when (tier) {
-    DayTier.SUPER_DAY -> Gold400
-    DayTier.TARGET_ACHIEVED -> Emerald500
-    DayTier.PARTIAL_PROGRESS -> Amber500
-    DayTier.NEEDS_ATTENTION -> Crimson500
-    DayTier.STREAK_FREEZE -> Cyan400
-    DayTier.NO_GOALS, DayTier.UPCOMING -> Color(0xFF4B6B5E)
+    DayTier.SUPER_DAY -> GoldSuperDay
+    DayTier.TARGET_ACHIEVED -> ForestGreen
+    DayTier.PARTIAL_PROGRESS -> AmberStreak
+    DayTier.NEEDS_ATTENTION -> RoseError
+    DayTier.STREAK_FREEZE -> SkyFreeze
+    DayTier.NO_GOALS, DayTier.UPCOMING -> Color.Gray
 }
 
 private fun tierLabel(tier: DayTier): String = when (tier) {
-    DayTier.SUPER_DAY -> "SUPER DAY"
-    DayTier.TARGET_ACHIEVED -> "TARGET ACHIEVED"
-    DayTier.PARTIAL_PROGRESS -> "PARTIAL PROGRESS"
-    DayTier.NEEDS_ATTENTION -> "NEEDS ATTENTION"
-    DayTier.STREAK_FREEZE -> "STREAK FREEZE"
-    DayTier.NO_GOALS -> "NO DATA"
-    DayTier.UPCOMING -> "UPCOMING"
+    DayTier.SUPER_DAY -> "Super Day"
+    DayTier.TARGET_ACHIEVED -> "Goal Achieved"
+    DayTier.PARTIAL_PROGRESS -> "Partial"
+    DayTier.NEEDS_ATTENTION -> "Needs Focus"
+    DayTier.STREAK_FREEZE -> "Streak Freeze"
+    DayTier.NO_GOALS -> "No Data"
+    DayTier.UPCOMING -> "Upcoming"
 }

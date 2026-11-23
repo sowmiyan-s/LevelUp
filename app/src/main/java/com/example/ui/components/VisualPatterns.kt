@@ -28,14 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.R
 import com.example.model.WorkCategory
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Emerald950
-import com.example.ui.theme.Mint400
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.ForestGreen
 
 @DrawableRes
 fun categoryIconRes(category: String): Int = when (WorkCategory.fromLabel(category)) {
@@ -52,8 +52,8 @@ fun categoryIconRes(category: String): Int = when (WorkCategory.fromLabel(catego
  * that stays crisp and unobtrusive behind modern Material 3 surfaces.
  */
 fun Modifier.bioTechGridPattern(
-    dotColor: Color = Mint400.copy(alpha = 0.14f),
-    lineColor: Color = Emerald500.copy(alpha = 0.06f),
+    dotColor: Color = ForestGreen.copy(alpha = 0.14f),
+    lineColor: Color = ForestGreen.copy(alpha = 0.06f),
     spacing: Dp = 24.dp
 ): Modifier = this.drawBehind {
     val step = spacing.toPx()
@@ -97,12 +97,11 @@ fun Modifier.bioTechGridPattern(
 }
 
 /**
- * Draws clean, copyright-free concentric orbital contour arcs radiating from the top-end corner
- * for subtle bio-tech surface depth.
+ * Draws clean concentric contour arcs for subtle surface depth.
  */
 fun Modifier.orbitalContourPattern(
-    ringColor: Color = Mint400.copy(alpha = 0.12f),
-    glowColor: Color = Emerald500.copy(alpha = 0.12f)
+    ringColor: Color = ForestGreen.copy(alpha = 0.12f),
+    glowColor: Color = ForestGreen.copy(alpha = 0.12f)
 ): Modifier = this.drawBehind {
     val anchor = Offset(size.width * 0.92f, size.height * 0.12f)
     val maxRadius = maxOf(size.width, size.height) * 0.72f
@@ -134,16 +133,16 @@ fun LevelUpBrandBadge(
     size: Dp = 40.dp
 ) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = Emerald500.copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, Mint400.copy(alpha = 0.45f)),
+        shape = RoundedCornerShape(10.dp),
+        color = ForestGreen.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.35f)),
         modifier = modifier.size(size)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_levelup_brand),
                 contentDescription = "Level Up emblem",
-                tint = Mint400,
+                tint = ForestGreen,
                 modifier = Modifier.size(size * 0.58f)
             )
         }
@@ -160,9 +159,9 @@ fun IllustratedEmptyStateCard(
     actionContent: (@Composable () -> Unit)? = null
 ) {
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -172,8 +171,8 @@ fun IllustratedEmptyStateCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(168.dp)
-                    .clip(RoundedCornerShape(18.dp))
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(12.dp))
             ) {
                 Image(
                     painter = painterResource(id = illustrationRes),
@@ -188,7 +187,7 @@ fun IllustratedEmptyStateCard(
                             Brush.verticalGradient(
                                 listOf(
                                     Color.Transparent,
-                                    Emerald950.copy(alpha = 0.48f)
+                                    DarkBackground.copy(alpha = 0.45f)
                                 )
                             )
                         )
@@ -200,9 +199,10 @@ fun IllustratedEmptyStateCard(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
@@ -210,7 +210,7 @@ fun IllustratedEmptyStateCard(
                 textAlign = TextAlign.Center
             )
             if (actionContent != null) {
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
                 actionContent()
             }
         }

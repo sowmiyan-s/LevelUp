@@ -56,10 +56,11 @@ import androidx.compose.ui.unit.dp
 import com.example.model.DateKeyUtils
 import com.example.model.UserProfile
 import com.example.model.WorkCategory
-import com.example.ui.theme.Crimson500
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Gold400
-import com.example.ui.theme.Mint400
+import com.example.ui.theme.AmberStreak
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.ForestGreen
+import com.example.ui.theme.GoldSuperDay
+import com.example.ui.theme.RoseError
 import com.example.viewmodel.DashboardSummary
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -117,14 +118,15 @@ fun StatsAndShieldScreen(
             item {
                 Column {
                     Text(
-                        text = "TELEMETRY & SHIELD CONFIG",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        text = "Insights & Shield",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Analytics & Shield",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onBackground
+                        text = "Focus analytics, distraction shield, and settings",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -133,27 +135,27 @@ fun StatsAndShieldScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     KpiCard(
                         icon = Icons.Rounded.LocalFireDepartment,
-                        label = "Current Streak",
-                        value = "${summary.currentStreak} days",
-                        accent = Gold400,
+                        label = "Streak",
+                        value = "${summary.currentStreak}d",
+                        accent = AmberStreak,
                         modifier = Modifier.weight(1f)
                     )
                     KpiCard(
                         icon = Icons.Rounded.EmojiEvents,
                         label = "Super Days",
                         value = "${summary.superDaysCount}",
-                        accent = Mint400,
+                        accent = GoldSuperDay,
                         modifier = Modifier.weight(1f)
                     )
                     KpiCard(
                         icon = Icons.Rounded.Bolt,
-                        label = "Total Logged",
+                        label = "Total Time",
                         value = DateKeyUtils.formatDurationMinutes(summary.totalFocusMinutes),
-                        accent = Emerald500,
+                        accent = ForestGreen,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -163,16 +165,17 @@ fun StatsAndShieldScreen(
             item {
                 val maxMins = (weeklyData.maxOfOrNull { it.second } ?: 60).coerceAtLeast(60)
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(
                             text = "7-Day Focus Velocity",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
@@ -185,23 +188,21 @@ fun StatsAndShieldScreen(
                         Canvas(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(150.dp)
+                                .height(130.dp)
                         ) {
                             val barCount = weeklyData.size
                             val slotWidth = size.width / barCount
-                            val barWidth = slotWidth * 0.52f
+                            val barWidth = slotWidth * 0.45f
                             weeklyData.forEachIndexed { idx, (_, mins) ->
                                 val ratio = (mins.toFloat() / maxMins.toFloat()).coerceIn(0.04f, 1f)
                                 val barHeight = size.height * ratio
                                 val x = idx * slotWidth + (slotWidth - barWidth) / 2f
                                 val y = size.height - barHeight
                                 drawRoundRect(
-                                    brush = Brush.verticalGradient(
-                                        listOf(Mint400, Emerald500)
-                                    ),
+                                    color = if (mins > 0) ForestGreen else ForestGreen.copy(alpha = 0.2f),
                                     topLeft = Offset(x, y),
                                     size = Size(barWidth, barHeight),
-                                    cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx())
+                                    cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
                                 )
                             }
                         }
@@ -221,7 +222,8 @@ fun StatsAndShieldScreen(
                                     Text(
                                         text = "${mins}m",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Mint400
+                                        color = if (mins > 0) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             }
@@ -233,16 +235,17 @@ fun StatsAndShieldScreen(
             // Category Breakdown
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(
                             text = "Category Breakdown",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Spacer(Modifier.height(12.dp))
                         if (categoryTotals.isEmpty()) {
@@ -257,22 +260,27 @@ fun StatsAndShieldScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(label, style = MaterialTheme.typography.titleMedium)
                                     Text(
-                                        DateKeyUtils.formatDurationMinutes(mins),
+                                        text = label,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = DateKeyUtils.formatDurationMinutes(mins),
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Mint400
+                                        color = ForestGreen,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 LinearProgressIndicator(
                                     progress = { pct },
-                                    color = Emerald500,
+                                    color = ForestGreen,
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(7.dp)
-                                        .clip(RoundedCornerShape(50))
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
                                 )
                                 Spacer(Modifier.height(12.dp))
                             }
@@ -284,24 +292,25 @@ fun StatsAndShieldScreen(
             // Distraction Shield Apps
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Shield, contentDescription = null, tint = Mint400)
+                            Icon(Icons.Rounded.Shield, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "Shielded Distraction Apps",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "Select apps to lock inside Focus Shield when Study Mode is active.",
+                            text = "Select apps to block inside Focus Shield during active focus sessions.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -328,9 +337,16 @@ fun StatsAndShieldScreen(
                                         )
                                     },
                                     label = { Text(app) },
+                                    shape = RoundedCornerShape(8.dp),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = Emerald500.copy(alpha = 0.22f),
-                                        selectedLabelColor = Mint400
+                                        selectedContainerColor = ForestGreen.copy(alpha = 0.15f),
+                                        selectedLabelColor = ForestGreen
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = selected,
+                                        selectedBorderColor = ForestGreen.copy(alpha = 0.45f),
+                                        borderColor = MaterialTheme.colorScheme.outline
                                     )
                                 )
                             }
@@ -342,22 +358,24 @@ fun StatsAndShieldScreen(
             // Preferences & Daily Target
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(
-                            text = "Preferences & Targets",
+                            text = "Preferences & Target",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Spacer(Modifier.height(12.dp))
 
                         Text(
-                            text = "Daily Focus Target: ${DateKeyUtils.formatDurationMinutes(profile.dailyTargetMinutes.toInt())}",
-                            style = MaterialTheme.typography.titleMedium
+                            text = "Daily Target: ${DateKeyUtils.formatDurationMinutes(profile.dailyTargetMinutes.toInt())}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Slider(
                             value = profile.dailyTargetMinutes.toFloat(),
@@ -372,8 +390,8 @@ fun StatsAndShieldScreen(
                             },
                             valueRange = 60f..720f,
                             colors = SliderDefaults.colors(
-                                thumbColor = Emerald500,
-                                activeTrackColor = Mint400
+                                thumbColor = ForestGreen,
+                                activeTrackColor = ForestGreen
                             )
                         )
 
@@ -385,9 +403,9 @@ fun StatsAndShieldScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.DarkMode, contentDescription = null, tint = Mint400)
+                                Icon(Icons.Rounded.DarkMode, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
-                                Text("Bio-Tech Dark Emerald Theme", style = MaterialTheme.typography.bodyLarge)
+                                Text("Dark theme", style = MaterialTheme.typography.bodyLarge)
                             }
                             Switch(
                                 checked = profile.darkModeEnabled,
@@ -399,7 +417,7 @@ fun StatsAndShieldScreen(
                                         profile.hapticsEnabled
                                     )
                                 },
-                                colors = SwitchDefaults.colors(checkedTrackColor = Emerald500),
+                                colors = SwitchDefaults.colors(checkedTrackColor = ForestGreen),
                                 modifier = Modifier.testTag("dark_mode_switch")
                             )
                         }
@@ -412,9 +430,9 @@ fun StatsAndShieldScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Vibration, contentDescription = null, tint = Mint400)
+                                Icon(Icons.Rounded.Vibration, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
-                                Text("Tactile Haptic Feedback", style = MaterialTheme.typography.bodyLarge)
+                                Text("Haptic feedback", style = MaterialTheme.typography.bodyLarge)
                             }
                             Switch(
                                 checked = profile.hapticsEnabled,
@@ -426,26 +444,27 @@ fun StatsAndShieldScreen(
                                         checked
                                     )
                                 },
-                                colors = SwitchDefaults.colors(checkedTrackColor = Emerald500)
+                                colors = SwitchDefaults.colors(checkedTrackColor = ForestGreen)
                             )
                         }
                     }
                 }
             }
 
-            // Account Card & Sign Out
+            // Account & Sign Out
             item {
                 Surface(
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(
                             text = profile.displayName.ifBlank { "Level Up Member" },
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
                         )
                         if (!userEmail.isNullOrBlank()) {
                             Spacer(Modifier.height(2.dp))
@@ -458,21 +477,21 @@ fun StatsAndShieldScreen(
                         Spacer(Modifier.height(14.dp))
                         OutlinedButton(
                             onClick = onSignOut,
-                            shape = RoundedCornerShape(14.dp),
-                            border = BorderStroke(1.dp, Crimson500.copy(alpha = 0.6f)),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, RoseError.copy(alpha = 0.5f)),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(44.dp)
                                 .testTag("sign_out_button")
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.Logout,
                                 contentDescription = null,
-                                tint = Crimson500,
-                                modifier = Modifier.size(18.dp)
+                                tint = RoseError,
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text("Sign Out", color = Crimson500, fontWeight = FontWeight.Bold)
+                            Text("Sign Out", color = RoseError, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -492,13 +511,13 @@ private fun KpiCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = modifier
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
             Spacer(Modifier.height(8.dp))
             Text(
                 text = value,

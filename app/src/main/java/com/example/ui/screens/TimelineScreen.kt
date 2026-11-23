@@ -56,9 +56,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.model.DateKeyUtils
 import com.example.model.WorkSession
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Emerald950
-import com.example.ui.theme.Mint400
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.ForestGreen
+import com.example.ui.theme.Mint200
 import com.example.viewmodel.DashboardSummary
 
 @Composable
@@ -96,31 +96,36 @@ fun TimelineScreen(
                 ) {
                     Column {
                         Text(
-                            text = "24-HOUR TIME BLOCK",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = "Timeline",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Work Timeline",
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onBackground
+                            text = "Daily work blocks & deliverables",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Button(
                         onClick = { onOpenManualLog(selectedDateKey) },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Emerald500,
-                            contentColor = Emerald950
+                            containerColor = ForestGreen,
+                            contentColor = DarkBackground
                         ),
                         modifier = Modifier
-                            .height(48.dp)
+                            .height(40.dp)
                             .testTag("add_manual_log_button")
                     ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Add Log", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Add Log",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -128,9 +133,9 @@ fun TimelineScreen(
             // Date Navigation Strip
             item {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -142,7 +147,7 @@ fun TimelineScreen(
                     ) {
                         IconButton(
                             onClick = { selectedDateKey = DateKeyUtils.shiftDays(selectedDateKey, -1) },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
@@ -154,18 +159,19 @@ fun TimelineScreen(
                             Text(
                                 text = DateKeyUtils.displayDate(selectedDateKey),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "${DateKeyUtils.formatDurationMinutes(dayTotalMinutes)} logged • ${daySessions.size} blocks",
+                                text = "${DateKeyUtils.formatDurationMinutes(dayTotalMinutes)} logged • ${daySessions.size} sessions",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Mint400
+                                color = ForestGreen
                             )
                         }
 
                         IconButton(
                             onClick = { selectedDateKey = DateKeyUtils.shiftDays(selectedDateKey, 1) },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -179,9 +185,9 @@ fun TimelineScreen(
             if (daySessions.isEmpty()) {
                 item {
                     Surface(
-                        shape = RoundedCornerShape(22.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -191,25 +197,28 @@ fun TimelineScreen(
                             Icon(
                                 imageVector = Icons.Rounded.Schedule,
                                 contentDescription = null,
-                                tint = Mint400,
-                                modifier = Modifier.size(42.dp)
+                                tint = ForestGreen,
+                                modifier = Modifier.size(36.dp)
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text = "No work blocks logged for ${DateKeyUtils.displayDate(selectedDateKey)}",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                text = "Run Study Mode from Home or tap Add Log to place a time block with sub-notes.",
+                                text = "Start a focus session from Home or tap Add Log to record a completed block.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Spacer(Modifier.height(14.dp))
                             OutlinedButton(
                                 onClick = { onOpenManualLog(selectedDateKey) },
-                                modifier = Modifier.height(48.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.height(42.dp)
                             ) {
                                 Text("Log Work Block")
                             }
@@ -253,26 +262,26 @@ private fun TimelineBlockCard(
     ) {
         // Left Time Rail
         Column(
-            modifier = Modifier.width(74.dp),
+            modifier = Modifier.width(64.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = startFormatted,
                 style = MaterialTheme.typography.labelSmall,
-                color = Mint400
+                color = ForestGreen
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Box(
                 modifier = Modifier
-                    .size(10.dp)
+                    .size(8.dp)
                     .clip(CircleShape)
-                    .background(Emerald500)
+                    .background(ForestGreen)
             )
             Box(
                 modifier = Modifier
-                    .width(2.dp)
-                    .height(62.dp)
-                    .background(Emerald500.copy(alpha = 0.35f))
+                    .width(1.5.dp)
+                    .height(56.dp)
+                    .background(MaterialTheme.colorScheme.outline)
             )
             Text(
                 text = endFormatted,
@@ -285,9 +294,9 @@ private fun TimelineBlockCard(
 
         // Session Content & Sub-Note Drawer
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier
                 .weight(1f)
                 .clickable { expanded = !expanded }
@@ -303,33 +312,33 @@ private fun TimelineBlockCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Surface(
-                            color = Emerald500.copy(alpha = 0.18f),
-                            shape = RoundedCornerShape(50)
+                            color = ForestGreen.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = DateKeyUtils.formatDurationMinutes(session.durationMinutes.toInt()),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Mint400,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                color = ForestGreen,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(50)
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = session.category,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                         if (session.shieldActive) {
                             Icon(
                                 imageVector = Icons.Rounded.Shield,
                                 contentDescription = "Focus Shield active",
-                                tint = Mint400,
-                                modifier = Modifier.size(16.dp)
+                                tint = ForestGreen,
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     }
@@ -337,15 +346,17 @@ private fun TimelineBlockCard(
                     Icon(
                         imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = if (expanded) "Collapse notes" else "Expand notes",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = session.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 if (session.tags.isNotEmpty()) {
@@ -356,14 +367,14 @@ private fun TimelineBlockCard(
                     ) {
                         session.tags.forEach { tag ->
                             Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                                shape = RoundedCornerShape(8.dp)
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(6.dp)
                             ) {
                                 Text(
                                     text = tag,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
@@ -375,11 +386,11 @@ private fun TimelineBlockCard(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp)
+                            .padding(top = 10.dp)
                     ) {
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
-                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -389,29 +400,32 @@ private fun TimelineBlockCard(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "SUB-NOTES & DELIVERABLES",
+                                        text = "Deliverables & Notes",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                     Row {
                                         IconButton(
                                             onClick = { editingNotes = !editingNotes },
-                                            modifier = Modifier.size(40.dp)
+                                            modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.EditNote,
-                                                contentDescription = "Edit sub-notes",
-                                                tint = Mint400
+                                                contentDescription = "Edit notes",
+                                                tint = ForestGreen,
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                         IconButton(
                                             onClick = onDelete,
-                                            modifier = Modifier.size(40.dp)
+                                            modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.DeleteOutline,
                                                 contentDescription = "Delete session",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                     }
@@ -424,6 +438,7 @@ private fun TimelineBlockCard(
                                         onValueChange = { if (it.length <= 2000) draftNotes = it },
                                         minLines = 3,
                                         maxLines = 6,
+                                        shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                     Spacer(Modifier.height(8.dp))
@@ -442,18 +457,19 @@ private fun TimelineBlockCard(
                                                 onSaveNotes(draftNotes)
                                                 editingNotes = false
                                             },
+                                            shape = RoundedCornerShape(8.dp),
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = Emerald500,
-                                                contentColor = Emerald950
+                                                containerColor = ForestGreen,
+                                                contentColor = DarkBackground
                                             )
                                         ) {
-                                            Text("Save", fontWeight = FontWeight.Bold)
+                                            Text("Save")
                                         }
                                     }
                                 } else {
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = session.subNotes.ifBlank { "No deliverables recorded yet. Tap edit to add notes." },
+                                        text = session.subNotes.ifBlank { "No deliverables recorded. Tap edit to add notes." },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )

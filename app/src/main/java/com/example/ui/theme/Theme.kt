@@ -10,16 +10,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val LevelUpDarkColorScheme = darkColorScheme(
-    primary = Emerald500,
-    onPrimary = Emerald950,
-    primaryContainer = Emerald700,
+    primary = ForestGreen,
+    onPrimary = DarkBackground,
+    primaryContainer = DarkSurfaceElevated,
     onPrimaryContainer = Mint200,
-    secondary = Mint400,
-    onSecondary = Emerald950,
-    secondaryContainer = Emerald800,
+    secondary = ForestGreenLight,
+    onSecondary = DarkBackground,
+    secondaryContainer = DarkSurfaceVariant,
     onSecondaryContainer = Mint200,
-    tertiary = Gold400,
-    onTertiary = Emerald950,
+    tertiary = AmberStreak,
+    onTertiary = DarkBackground,
     background = DarkBackground,
     onBackground = DarkOnSurface,
     surface = DarkSurface,
@@ -27,20 +27,21 @@ private val LevelUpDarkColorScheme = darkColorScheme(
     surfaceVariant = DarkSurfaceElevated,
     onSurfaceVariant = DarkOnSurfaceMuted,
     outline = DarkOutline,
-    error = Crimson500,
+    outlineVariant = DarkOutlineSubtle,
+    error = RoseError,
     onError = Color.White
 )
 
 private val LevelUpLightColorScheme = lightColorScheme(
-    primary = Emerald600,
+    primary = ForestGreenDark,
     onPrimary = Color.White,
-    primaryContainer = Mint200,
-    onPrimaryContainer = Emerald900,
-    secondary = Emerald500,
+    primaryContainer = Mint50,
+    onPrimaryContainer = ForestGreenDark,
+    secondary = ForestGreen,
     onSecondary = Color.White,
     secondaryContainer = LightSurfaceVariant,
-    onSecondaryContainer = Emerald800,
-    tertiary = Amber500,
+    onSecondaryContainer = ForestGreenDark,
+    tertiary = AmberStreak,
     onTertiary = Color.White,
     background = LightBackground,
     onBackground = LightOnSurface,
@@ -49,15 +50,16 @@ private val LevelUpLightColorScheme = lightColorScheme(
     surfaceVariant = LightSurfaceVariant,
     onSurfaceVariant = LightOnSurfaceMuted,
     outline = LightOutline,
-    error = Crimson500,
+    outlineVariant = LightOutlineSubtle,
+    error = RoseError,
     onError = Color.White
 )
 
 val LevelUpShapes = Shapes(
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp)
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
 @Composable

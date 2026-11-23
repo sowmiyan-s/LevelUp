@@ -64,13 +64,12 @@ import com.example.model.UiState
 import com.example.model.WorkCategory
 import com.example.ui.components.HeroAiSection
 import com.example.ui.components.InteractiveFocusDial
-import com.example.ui.theme.Amber500
-import com.example.ui.theme.Crimson500
-import com.example.ui.theme.Cyan400
-import com.example.ui.theme.Emerald500
-import com.example.ui.theme.Emerald950
-import com.example.ui.theme.Gold400
-import com.example.ui.theme.Mint400
+import com.example.ui.theme.AmberStreak
+import com.example.ui.theme.DarkBackground
+import com.example.ui.theme.ForestGreen
+import com.example.ui.theme.GoldSuperDay
+import com.example.ui.theme.RoseError
+import com.example.ui.theme.SkyFreeze
 import com.example.viewmodel.DashboardSummary
 import com.example.viewmodel.TimerStatus
 import com.example.viewmodel.TimerUiState
@@ -125,64 +124,67 @@ fun HomeDashboardScreen(
                 ) {
                     Column {
                         Text(
-                            text = "LEVEL UP",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = "Today",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Focus Dashboard",
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onBackground
+                            text = "Daily Focus & Goals",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         // Streak Flame Pill
                         Surface(
-                            shape = RoundedCornerShape(50),
-                            color = Gold400.copy(alpha = 0.16f),
-                            border = BorderStroke(1.dp, Gold400.copy(alpha = 0.5f))
+                            shape = RoundedCornerShape(12.dp),
+                            color = AmberStreak.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.35f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.LocalFireDepartment,
                                     contentDescription = "Current streak",
-                                    tint = Gold400,
-                                    modifier = Modifier.size(18.dp)
+                                    tint = AmberStreak,
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = "${summary.currentStreak}d",
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = Gold400
+                                    color = AmberStreak,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }
 
                         // Freeze Shield Pill
                         Surface(
-                            shape = RoundedCornerShape(50),
-                            color = Cyan400.copy(alpha = 0.14f),
-                            border = BorderStroke(1.dp, Cyan400.copy(alpha = 0.45f))
+                            shape = RoundedCornerShape(12.dp),
+                            color = SkyFreeze.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, SkyFreeze.copy(alpha = 0.35f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.AcUnit,
                                     contentDescription = "Available streak freezes",
-                                    tint = Cyan400,
-                                    modifier = Modifier.size(16.dp)
+                                    tint = SkyFreeze,
+                                    modifier = Modifier.size(15.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = "${summary.profile.streakFreezes}",
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = Cyan400
+                                    color = SkyFreeze,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }
@@ -194,36 +196,31 @@ fun HomeDashboardScreen(
             item {
                 AnimatedVisibility(visible = summary.isSuperDayToday) {
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = Color.Transparent,
-                        border = BorderStroke(1.dp, Gold400.copy(alpha = 0.7f)),
+                        shape = RoundedCornerShape(14.dp),
+                        color = GoldSuperDay.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, GoldSuperDay.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(Gold400.copy(alpha = 0.25f), Amber500.copy(alpha = 0.14f))
-                                    )
-                                )
-                                .padding(14.dp),
+                            modifier = Modifier.padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.EmojiEvents,
                                 contentDescription = null,
-                                tint = Gold400,
-                                modifier = Modifier.size(26.dp)
+                                tint = GoldSuperDay,
+                                modifier = Modifier.size(24.dp)
                             )
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = "SUPER DAY ACHIEVED",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Gold400
+                                    text = "Super Day Achieved",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = GoldSuperDay,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "100% Essential + Optional Bonus goals completed today!",
+                                    text = "All Essential and Bonus goals completed for today.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -233,7 +230,7 @@ fun HomeDashboardScreen(
                 }
             }
 
-            // HERO AI FOCUS COACH SECTION
+            // AI Focus Coach Section
             item {
                 HeroAiSection(
                     briefingState = briefingState,
@@ -246,7 +243,7 @@ fun HomeDashboardScreen(
                 )
             }
 
-            // Interactive Focus Ring Dial
+            // Focus Ring Dial
             item {
                 InteractiveFocusDial(
                     timerState = timerState,
@@ -268,11 +265,11 @@ fun HomeDashboardScreen(
                 val shieldedCount = summary.profile.shieldedApps.size
                 val isShieldLive = timerState.status == TimerStatus.RUNNING
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(
                         1.dp,
-                        if (isShieldLive) Mint400.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        if (isShieldLive) ForestGreen.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outline
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -282,13 +279,16 @@ fun HomeDashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(38.dp)
+                                        .size(36.dp)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isShieldLive) Emerald500.copy(alpha = 0.22f)
+                                            if (isShieldLive) ForestGreen.copy(alpha = 0.15f)
                                             else MaterialTheme.colorScheme.surfaceVariant
                                         ),
                                     contentAlignment = Alignment.Center
@@ -296,25 +296,26 @@ fun HomeDashboardScreen(
                                     Icon(
                                         imageVector = Icons.Rounded.Shield,
                                         contentDescription = null,
-                                        tint = if (isShieldLive) Mint400 else MaterialTheme.colorScheme.primary
+                                        tint = if (isShieldLive) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
-                                Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text(
                                         text = if (isShieldLive) {
-                                            "Focus Shield Active: $shieldedCount Apps Locked"
+                                            "Focus Shield Active: $shieldedCount Apps"
                                         } else {
                                             "Focus Shield Armed ($shieldedCount Apps)"
                                         },
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
                                         text = if (isShieldLive) {
-                                            "Distraction barrier engaged during Study Mode"
+                                            "Distraction barrier engaged during focus session"
                                         } else {
-                                            "Engages automatically when Study Mode starts"
+                                            "Engages automatically when focus session starts"
                                         },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -323,12 +324,13 @@ fun HomeDashboardScreen(
                             }
                             IconButton(
                                 onClick = onNavigateToShieldSettings,
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Tune,
                                     contentDescription = "Configure Shield Apps",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -336,19 +338,19 @@ fun HomeDashboardScreen(
                         if (summary.profile.shieldedApps.isNotEmpty()) {
                             Spacer(Modifier.height(10.dp))
                             FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 summary.profile.shieldedApps.forEach { app ->
                                     Surface(
                                         color = MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = RoundedCornerShape(50)
+                                        shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
                                             text = app,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                         )
                                     }
                                 }
@@ -363,11 +365,11 @@ fun HomeDashboardScreen(
                 val essDone = essentialGoals.count { it.completed }
                 val essTotal = essentialGoals.size
                 val ratioColor = when {
-                    summary.isSuperDayToday -> Gold400
-                    essTotal > 0 && essDone == essTotal -> Emerald500
-                    summary.todayCompletionRatio >= 0.5f -> Amber500
-                    essTotal > 0 -> Crimson500
-                    else -> MaterialTheme.colorScheme.primary
+                    summary.isSuperDayToday -> GoldSuperDay
+                    essTotal > 0 && essDone == essTotal -> ForestGreen
+                    summary.todayCompletionRatio >= 0.5f -> AmberStreak
+                    essTotal > 0 -> RoseError
+                    else -> ForestGreen
                 }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -378,15 +380,16 @@ fun HomeDashboardScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Today's Goals",
+                                text = "Daily Goals",
                                 style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onBackground
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = if (essTotal > 0) {
-                                    "Essential: $essDone / $essTotal (${(summary.todayCompletionRatio * 100).toInt()}%)"
+                                    "Essential: $essDone of $essTotal (${(summary.todayCompletionRatio * 100).toInt()}%)"
                                 } else {
-                                    "Add essential & optional bonus goals"
+                                    "Plan your essential & bonus tasks"
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -395,18 +398,22 @@ fun HomeDashboardScreen(
 
                         Button(
                             onClick = onOpenAddGoal,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Emerald500,
-                                contentColor = Emerald950
+                                containerColor = ForestGreen,
+                                contentColor = DarkBackground
                             ),
                             modifier = Modifier
-                                .height(48.dp)
+                                .height(40.dp)
                                 .testTag("add_goal_button")
                         ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Add Goal", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "Add Goal",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
 
@@ -418,8 +425,8 @@ fun HomeDashboardScreen(
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(50))
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
                         )
                     }
                 }
@@ -429,9 +436,9 @@ fun HomeDashboardScreen(
             if (todayGoals.isEmpty()) {
                 item {
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -439,20 +446,23 @@ fun HomeDashboardScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "No daily goals locked in yet",
+                                text = "No daily goals set yet",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                text = "Use the Hero AI Day Plan above or tap Add Goal to define your Essential & Bonus targets.",
+                                text = "Use Plan Day above or tap Add Goal to define your focus targets.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Spacer(Modifier.height(14.dp))
                             OutlinedButton(
                                 onClick = onOpenAddGoal,
-                                modifier = Modifier.height(48.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.height(42.dp)
                             ) {
                                 Text("Create First Goal")
                             }
@@ -487,11 +497,11 @@ private fun GoalRowCard(
 ) {
     val isOptional = goal.resolvedTier() == GoalTier.OPTIONAL
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             1.dp,
-            if (goal.completed) Mint400.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+            if (goal.completed) ForestGreen.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -501,20 +511,22 @@ private fun GoalRowCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = onToggle,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = if (goal.completed) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
                     contentDescription = if (goal.completed) "Mark incomplete" else "Mark complete",
-                    tint = if (goal.completed) Mint400 else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(26.dp)
+                    tint = if (goal.completed) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
                 )
             }
+
+            Spacer(Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -522,14 +534,14 @@ private fun GoalRowCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
-                        color = if (isOptional) Gold400.copy(alpha = 0.18f) else Emerald500.copy(alpha = 0.16f),
-                        shape = RoundedCornerShape(50)
+                        color = if (isOptional) AmberStreak.copy(alpha = 0.12f) else ForestGreen.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = if (isOptional) "BONUS" else "ESSENTIAL",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isOptional) Gold400 else Mint400,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            color = if (isOptional) AmberStreak else ForestGreen,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                     Text(
@@ -553,12 +565,13 @@ private fun GoalRowCard(
 
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.DeleteOutline,
                     contentDescription = "Delete goal",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

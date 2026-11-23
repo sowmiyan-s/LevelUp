@@ -85,9 +85,8 @@ import com.example.ui.screens.CalendarScreen
 import com.example.ui.screens.HomeDashboardScreen
 import com.example.ui.screens.StatsAndShieldScreen
 import com.example.ui.screens.TimelineScreen
-import com.example.ui.theme.Emerald500
+import com.example.ui.theme.ForestGreen
 import com.example.ui.theme.LevelUpTheme
-import com.example.ui.theme.Mint400
 import com.example.viewmodel.DashboardSummary
 import com.example.viewmodel.LevelUpViewModel
 import com.google.firebase.Firebase
@@ -178,7 +177,7 @@ private fun AppContent() {
                         .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Mint400)
+                    CircularProgressIndicator(color = ForestGreen)
                 }
             } else {
                 AuthScreen(
@@ -319,9 +318,11 @@ private fun AuthenticatedLevelUpApp(
                                     },
                                     label = { Text(dest.label) },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = Emerald500,
-                                        selectedTextColor = Emerald500,
-                                        indicatorColor = Emerald500.copy(alpha = 0.16f)
+                                        selectedIconColor = ForestGreen,
+                                        selectedTextColor = ForestGreen,
+                                        indicatorColor = ForestGreen.copy(alpha = 0.12f),
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     modifier = Modifier.testTag("nav_${dest.route}")
                                 )
@@ -356,9 +357,11 @@ private fun AuthenticatedLevelUpApp(
                                     },
                                     label = { Text(dest.label) },
                                     colors = NavigationRailItemDefaults.colors(
-                                        selectedIconColor = Emerald500,
-                                        selectedTextColor = Emerald500,
-                                        indicatorColor = Emerald500.copy(alpha = 0.16f)
+                                        selectedIconColor = ForestGreen,
+                                        selectedTextColor = ForestGreen,
+                                        indicatorColor = ForestGreen.copy(alpha = 0.12f),
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     modifier = Modifier.testTag("rail_${dest.route}")
                                 )
@@ -373,10 +376,10 @@ private fun AuthenticatedLevelUpApp(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator(color = Mint400)
+                                    CircularProgressIndicator(color = ForestGreen)
                                     Spacer(Modifier.height(12.dp))
                                     Text(
-                                        text = "Syncing your focus telemetry...",
+                                        text = "Syncing focus data...",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

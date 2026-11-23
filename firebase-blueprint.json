@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User focus settings, shield apps, and streak freeze balance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "dailyTargetMinutes": { "type": "integer", "description": "Daily focus goal in minutes" },
+        "streakFreezes": { "type": "integer", "description": "Available streak freeze shields" },
+        "shieldedApps": { "type": "array", "description": "List of shielded distraction app names" },
+        "darkModeEnabled": { "type": "boolean", "description": "Whether dark emerald theme is preferred" },
+        "hapticsEnabled": { "type": "boolean", "description": "Whether tactile haptics are enabled" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "displayName", "dailyTargetMinutes", "streakFreezes", "shieldedApps", "darkModeEnabled", "hapticsEnabled", "createdAt", "updatedAt"]
+    },
+    "DailyGoal": {
+      "title": "DailyGoal",
+      "description": "Daily essential or optional bonus goal for focus tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "dateKey": { "type": "string", "description": "Date key in YYYY-MM-DD format" },
+        "title": { "type": "string", "description": "Goal title" },
+        "targetMinutes": { "type": "integer", "description": "Target minutes for the goal" },
+        "category": { "type": "string", "description": "Work category" },
+        "tier": { "type": "string", "enum": ["ESSENTIAL", "OPTIONAL"], "description": "Goal priority tier" },
+        "completed": { "type": "boolean", "description": "Completion flag" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "dateKey", "title", "targetMinutes", "category", "tier", "completed", "createdAt", "updatedAt"]
+    },
+    "WorkSession": {
+      "title": "WorkSession",
+      "description": "Logged focus work session with 24-hour timeline placement and sub-notes.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "dateKey": { "type": "string", "description": "Date key in YYYY-MM-DD format" },
+        "title": { "type": "string", "description": "Session title" },
+        "category": { "type": "string", "description": "Session category" },
+        "startMinuteOfDay": { "type": "integer", "description": "Start time in minutes from midnight (0-1439)" },
+        "durationMinutes": { "type": "integer", "description": "Session duration in minutes" },
+        "tags": { "type": "array", "description": "Hashtag labels" },
+        "subNotes": { "type": "string", "description": "Deliverables and sub-notes" },
+        "goalId": { "type": "string", "description": "Optional linked goal ID" },
+        "shieldActive": { "type": "boolean", "description": "Whether Focus Shield was active" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "dateKey", "title", "category", "startMinuteOfDay", "durationMinutes", "tags", "subNotes", "shieldActive", "createdAt", "updatedAt"]
+    },
+    "DayStatus": {
+      "title": "DayStatus",
+      "description": "Calendar day override such as streak freeze usage.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "dateKey": { "type": "string", "description": "Date key in YYYY-MM-DD format" },
+        "freezeUsed": { "type": "boolean", "description": "Whether a streak freeze was applied" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "dateKey", "freezeUsed", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile, daily focus target, shielded apps, and streak freeze count."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": { "$ref": "#/entities/DailyGoal" },
+      "description": "User daily essential and optional goals."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/WorkSession" },
+      "description": "User logged work sessions and sub-notes."
+    },
+    "/users/{userId}/dayStatuses/{dateKey}": {
+      "schema": { "$ref": "#/entities/DayStatus" },
+      "description": "User streak freeze records per calendar day."
+    }
+  }
+}

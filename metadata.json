@@ -1,0 +1,6 @@
+{
+  "name": "Level Up",
+  "description": "Daily work logger, interactive focus dial, AI focus coach, and streak calendar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

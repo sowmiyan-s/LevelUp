@@ -60,6 +60,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.example.R
+import com.example.ui.components.bioTechGridPattern
 import com.example.ui.theme.Crimson500
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Emerald700
@@ -201,6 +202,10 @@ fun AuthScreen(
                 Brush.verticalGradient(
                     listOf(Emerald950, Emerald900, Color(0xFF042218))
                 )
+            )
+            .bioTechGridPattern(
+                dotColor = Mint400.copy(alpha = 0.10f),
+                lineColor = Emerald500.copy(alpha = 0.05f)
             )
             .safeDrawingPadding()
     ) {

@@ -52,10 +52,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.model.DateKeyUtils
 import com.example.model.WorkSession
+import com.example.ui.components.IllustratedEmptyStateCard
+import com.example.ui.components.categoryIconRes
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Emerald950
 import com.example.ui.theme.Mint400
@@ -178,35 +182,12 @@ fun TimelineScreen(
 
             if (daySessions.isEmpty()) {
                 item {
-                    Surface(
-                        shape = RoundedCornerShape(22.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(28.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Schedule,
-                                contentDescription = null,
-                                tint = Mint400,
-                                modifier = Modifier.size(42.dp)
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text = "No work blocks logged for ${DateKeyUtils.displayDate(selectedDateKey)}",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = "Run Study Mode from Home or tap Add Log to place a time block with sub-notes.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(14.dp))
+                    IllustratedEmptyStateCard(
+                        illustrationRes = R.drawable.img_empty_timeline,
+                        illustrationDescription = "Minimalist emerald timeline artwork",
+                        title = "No work blocks logged for ${DateKeyUtils.displayDate(selectedDateKey)}",
+                        subtitle = "Run Study Mode from Home or tap Add Log to place a time block with sub-notes.",
+                        actionContent = {
                             OutlinedButton(
                                 onClick = { onOpenManualLog(selectedDateKey) },
                                 modifier = Modifier.height(48.dp)
@@ -214,7 +195,7 @@ fun TimelineScreen(
                                 Text("Log Work Block")
                             }
                         }
-                    }
+                    )
                 }
             } else {
                 items(daySessions, key = { it.id }) { session ->
@@ -317,12 +298,23 @@ private fun TimelineBlockCard(
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(50)
                         ) {
-                            Text(
-                                text = session.category,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = categoryIconRes(session.category)),
+                                    contentDescription = null,
+                                    tint = Mint400,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = session.category,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         if (session.shieldActive) {
                             Icon(

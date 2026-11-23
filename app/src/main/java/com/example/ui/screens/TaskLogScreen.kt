@@ -47,11 +47,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.model.DateKeyUtils
 import com.example.model.TaskLog
 import com.example.model.WorkCategory
+import com.example.ui.components.IllustratedEmptyStateCard
+import com.example.ui.components.categoryIconRes
+import com.example.ui.components.orbitalContourPattern
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Emerald950
 import com.example.ui.theme.Mint400
@@ -124,7 +129,11 @@ fun TaskLogScreen(
                     border = BorderStroke(1.dp, Mint400.copy(alpha = 0.45f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .orbitalContourPattern()
+                            .padding(18.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -189,10 +198,18 @@ fun TaskLogScreen(
                                 FilterChip(
                                     selected = selected,
                                     onClick = { selectedCategory = cat },
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(id = categoryIconRes(cat.label)),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    },
                                     label = { Text(cat.label) },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = Emerald500.copy(alpha = 0.22f),
-                                        selectedLabelColor = Mint400
+                                        selectedLabelColor = Mint400,
+                                        selectedLeadingIconColor = Mint400
                                     ),
                                     modifier = Modifier.testTag("task_log_category_${cat.name}")
                                 )
@@ -330,40 +347,16 @@ fun TaskLogScreen(
             // Feed Items or Empty State
             if (sortedLogs.isEmpty()) {
                 item {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AccessTime,
-                                contentDescription = null,
-                                tint = Mint400,
-                                modifier = Modifier.size(38.dp)
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                text = if (activeFilterCategory == null) {
-                                    "No work logs recorded yet"
-                                } else {
-                                    "No $activeFilterCategory logs yet"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = "Type what you completed above and tap Save Work Log to record it with a live server timestamp.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    IllustratedEmptyStateCard(
+                        illustrationRes = R.drawable.img_empty_task_log,
+                        illustrationDescription = "Minimalist emerald work log illustration",
+                        title = if (activeFilterCategory == null) {
+                            "No work logs recorded yet"
+                        } else {
+                            "No $activeFilterCategory logs yet"
+                        },
+                        subtitle = "Type what you completed above and tap Save Work Log to record it with a live server timestamp."
+                    )
                 }
             } else {
                 items(sortedLogs, key = { it.id }) { entry ->
@@ -407,12 +400,23 @@ private fun TaskLogEntryCard(
                         color = Emerald500.copy(alpha = 0.16f),
                         shape = RoundedCornerShape(50)
                     ) {
-                        Text(
-                            text = entry.category.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Mint400,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
-                        )
+                        ) {
+                            Icon(
+                                painter = painterResource(id = categoryIconRes(entry.category)),
+                                contentDescription = null,
+                                tint = Mint400,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                text = entry.category.uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Mint400
+                            )
+                        }
                     }
                     if (entry.durationMinutes != null && entry.durationMinutes > 0L) {
                         Surface(

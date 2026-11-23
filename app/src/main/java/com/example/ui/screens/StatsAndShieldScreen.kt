@@ -50,12 +50,20 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.model.DateKeyUtils
 import com.example.model.UserProfile
 import com.example.model.WorkCategory
+import com.example.ui.components.bioTechGridPattern
+import com.example.ui.components.categoryIconRes
+import com.example.ui.components.orbitalContourPattern
 import com.example.ui.theme.Crimson500
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Gold400
@@ -168,7 +176,11 @@ fun StatsAndShieldScreen(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .orbitalContourPattern()
+                            .padding(18.dp)
+                    ) {
                         Text(
                             text = "7-Day Focus Velocity",
                             style = MaterialTheme.typography.titleLarge,
@@ -255,9 +267,19 @@ fun StatsAndShieldScreen(
                             categoryTotals.forEach { (label, mins, pct) ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(label, style = MaterialTheme.typography.titleMedium)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            painter = painterResource(id = categoryIconRes(label)),
+                                            contentDescription = null,
+                                            tint = Mint400,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(label, style = MaterialTheme.typography.titleMedium)
+                                    }
                                     Text(
                                         DateKeyUtils.formatDurationMinutes(mins),
                                         style = MaterialTheme.typography.labelSmall,
@@ -289,10 +311,25 @@ fun StatsAndShieldScreen(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .bioTechGridPattern()
+                            .padding(18.dp)
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Shield, contentDescription = null, tint = Mint400)
-                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                shape = CircleShape,
+                                border = BorderStroke(1.dp, Mint400.copy(alpha = 0.55f)),
+                                modifier = Modifier.size(34.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.img_focus_shield_emblem),
+                                    contentDescription = "Focus Shield emblem",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
                             Text(
                                 text = "Shielded Distraction Apps",
                                 style = MaterialTheme.typography.titleLarge,

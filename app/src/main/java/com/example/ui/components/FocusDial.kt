@@ -1,14 +1,7 @@
 package com.example.ui.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -29,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shield
@@ -103,25 +97,26 @@ fun InteractiveFocusDial(
         label = "dialProgress"
     )
 
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     val progressColor = if (timerState.status == TimerStatus.PAUSED) AmberStreak else ForestGreen
 
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surface,
+        tonalElevation = if (isActive) 4.dp else 1.dp,
         border = BorderStroke(
             width = 1.dp,
-            color = if (isActive) ForestGreen.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outline
+            color = if (isActive) ForestGreen.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
         ),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(22.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Row: Status Indicator + Today Target
+            // Header Row: Status Indicator + Target Progress
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -133,23 +128,24 @@ fun InteractiveFocusDial(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(10.dp)
                             .clip(CircleShape)
                             .background(
                                 when (timerState.status) {
                                     TimerStatus.RUNNING -> ForestGreen
                                     TimerStatus.PAUSED -> AmberStreak
-                                    TimerStatus.IDLE -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    TimerStatus.IDLE -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                                 }
                             )
                     )
                     Text(
                         text = when (timerState.status) {
-                            TimerStatus.RUNNING -> "Focusing"
-                            TimerStatus.PAUSED -> "Paused"
-                            TimerStatus.IDLE -> "Focus Timer"
+                            TimerStatus.RUNNING -> "Study Mode Active"
+                            TimerStatus.PAUSED -> "Study Paused"
+                            TimerStatus.IDLE -> "Study Mode Timer"
                         },
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = when (timerState.status) {
                             TimerStatus.RUNNING -> ForestGreen
                             TimerStatus.PAUSED -> AmberStreak
@@ -158,19 +154,26 @@ fun InteractiveFocusDial(
                     )
                 }
 
-                Text(
-                    text = "${DateKeyUtils.formatDurationMinutes(todayMinutes)} of ${DateKeyUtils.formatDurationMinutes(dailyTargetMinutes)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = "${DateKeyUtils.formatDurationMinutes(todayMinutes)} / ${DateKeyUtils.formatDurationMinutes(dailyTargetMinutes)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(18.dp))
 
             // Central Tactile Arc Dial
             Box(
                 modifier = Modifier
-                    .size(220.dp)
+                    .size(230.dp)
                     .pointerInput(timerState.status) {
                         if (timerState.status != TimerStatus.IDLE) return@pointerInput
                         detectDragGestures { change, _ ->
@@ -188,7 +191,7 @@ fun InteractiveFocusDial(
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidth = 14.dp.toPx()
+                    val strokeWidth = 16.dp.toPx()
                     val inset = strokeWidth / 2f + 8.dp.toPx()
                     val arcSize = Size(size.width - inset * 2f, size.height - inset * 2f)
                     val topLeft = Offset(inset, inset)
@@ -204,7 +207,7 @@ fun InteractiveFocusDial(
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
 
-                    // Active Arc
+                    // Active Arc with rounded caps
                     drawArc(
                         color = progressColor,
                         startAngle = -90f,
@@ -225,22 +228,23 @@ fun InteractiveFocusDial(
                             "${timerState.plannedMinutes}m"
                         },
                         style = MaterialTheme.typography.displayLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = if (isActive) {
                             "${timerState.selectedCategory.label} • Target ${timerState.plannedMinutes}m"
                         } else {
-                            "Drag dial or choose preset"
+                            "Drag dial or tap preset"
                         },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
             // Presets and Categories (Idle State)
             if (!isActive) {
@@ -248,7 +252,7 @@ fun InteractiveFocusDial(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    listOf(25, 45, 60, 90).forEach { mins ->
+                    listOf(15, 25, 45, 60, 90).forEach { mins ->
                         val selected = timerState.plannedMinutes == mins
                         FilterChip(
                             selected = selected,
@@ -256,23 +260,23 @@ fun InteractiveFocusDial(
                                 if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onSelectMinutes(mins)
                             },
-                            label = { Text("${mins}m") },
-                            shape = RoundedCornerShape(10.dp),
+                            label = { Text("${mins}m", fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                            shape = RoundedCornerShape(12.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen.copy(alpha = 0.15f),
+                                selectedContainerColor = ForestGreen.copy(alpha = 0.18f),
                                 selectedLabelColor = ForestGreen
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = selected,
-                                selectedBorderColor = ForestGreen.copy(alpha = 0.5f),
-                                borderColor = MaterialTheme.colorScheme.outline
+                                selectedBorderColor = ForestGreen,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             )
                         )
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -285,48 +289,48 @@ fun InteractiveFocusDial(
                             selected = selected,
                             onClick = { onSelectCategory(cat) },
                             label = { Text(cat.label) },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen.copy(alpha = 0.15f),
+                                selectedContainerColor = ForestGreen.copy(alpha = 0.18f),
                                 selectedLabelColor = ForestGreen
                             ),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = selected,
-                                selectedBorderColor = ForestGreen.copy(alpha = 0.5f),
-                                borderColor = MaterialTheme.colorScheme.outline
+                                selectedBorderColor = ForestGreen,
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             )
                         )
                     }
                 }
 
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(20.dp))
 
                 Button(
                     onClick = {
                         if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         onStart()
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ForestGreen,
                         contentColor = DarkBackground
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(52.dp)
                         .testTag("start_study_mode_button")
                 ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Start Focus",
+                        text = "Start Study Mode",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             } else {
-                // Active Controls: Pause/Resume & Stop & Log
+                // Active Controls: Pause/Resume & Complete & Save
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -340,7 +344,7 @@ fun InteractiveFocusDial(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .height(50.dp)
                             .testTag("pause_resume_button")
                     ) {
                         Icon(
@@ -351,12 +355,13 @@ fun InteractiveFocusDial(
                             },
                             contentDescription = null,
                             tint = if (timerState.status == TimerStatus.RUNNING) AmberStreak else ForestGreen,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = if (timerState.status == TimerStatus.RUNNING) "Pause" else "Resume",
                             style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -373,15 +378,15 @@ fun InteractiveFocusDial(
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .height(50.dp)
                             .testTag("stop_and_log_button")
                     ) {
-                        Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = "Stop & Log",
+                            text = "Finish & Save",
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -390,24 +395,27 @@ fun InteractiveFocusDial(
 
                 OutlinedButton(
                     onClick = onOpenShieldOverlay,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.4f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = ForestGreen
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
+                        .height(46.dp)
                         .testTag("open_shield_overlay_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Shield,
+                        imageVector = Icons.Rounded.Fullscreen,
                         contentDescription = null,
                         tint = ForestGreen,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Focus Shield Mode",
+                        text = "Zen Fullscreen Mode",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }

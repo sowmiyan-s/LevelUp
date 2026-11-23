@@ -58,7 +58,6 @@ import com.example.model.DateKeyUtils
 import com.example.model.WorkSession
 import com.example.ui.theme.DarkBackground
 import com.example.ui.theme.ForestGreen
-import com.example.ui.theme.Mint200
 import com.example.viewmodel.DashboardSummary
 
 @Composable
@@ -85,8 +84,8 @@ fun TimelineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .widthIn(max = 680.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Row(
@@ -96,13 +95,13 @@ fun TimelineScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Timeline",
+                            text = "Study Timeline",
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Daily work blocks & deliverables",
+                            text = "Daily study sessions and notes",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -116,15 +115,15 @@ fun TimelineScreen(
                             contentColor = DarkBackground
                         ),
                         modifier = Modifier
-                            .height(40.dp)
+                            .height(42.dp)
                             .testTag("add_manual_log_button")
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "Add Log",
+                            text = "Log Session",
                             style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -133,15 +132,15 @@ fun TimelineScreen(
             // Date Navigation Strip
             item {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -160,12 +159,13 @@ fun TimelineScreen(
                                 text = DateKeyUtils.displayDate(selectedDateKey),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "${DateKeyUtils.formatDurationMinutes(dayTotalMinutes)} logged • ${daySessions.size} sessions",
+                                text = "${DateKeyUtils.formatDurationMinutes(dayTotalMinutes)} studied • ${daySessions.size} sessions",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ForestGreen
+                                color = ForestGreen,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
@@ -185,42 +185,50 @@ fun TimelineScreen(
             if (daySessions.isEmpty()) {
                 item {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(28.dp),
+                            modifier = Modifier.padding(32.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Schedule,
-                                contentDescription = null,
-                                tint = ForestGreen,
-                                modifier = Modifier.size(36.dp)
-                            )
-                            Spacer(Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .background(ForestGreen.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Schedule,
+                                    contentDescription = null,
+                                    tint = ForestGreen,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(14.dp))
                             Text(
-                                text = "No work blocks logged for ${DateKeyUtils.displayDate(selectedDateKey)}",
+                                text = "No sessions logged for ${DateKeyUtils.displayDate(selectedDateKey)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Bold
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                text = "Start a focus session from Home or tap Add Log to record a completed block.",
+                                text = "Start Study Mode from the Home screen or tap 'Log Session' above.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
-                            Spacer(Modifier.height(14.dp))
+                            Spacer(Modifier.height(18.dp))
                             OutlinedButton(
                                 onClick = { onOpenManualLog(selectedDateKey) },
                                 shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.height(42.dp)
+                                modifier = Modifier.height(44.dp)
                             ) {
-                                Text("Log Work Block")
+                                Text("Log Session Manually")
                             }
                         }
                     }
@@ -235,7 +243,7 @@ fun TimelineScreen(
                 }
             }
 
-            item { Spacer(Modifier.height(12.dp)) }
+            item { Spacer(Modifier.height(14.dp)) }
         }
     }
 }
@@ -268,7 +276,8 @@ private fun TimelineBlockCard(
             Text(
                 text = startFormatted,
                 style = MaterialTheme.typography.labelSmall,
-                color = ForestGreen
+                color = ForestGreen,
+                fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Box(
@@ -279,9 +288,9 @@ private fun TimelineBlockCard(
             )
             Box(
                 modifier = Modifier
-                    .width(1.5.dp)
+                    .width(2.dp)
                     .height(56.dp)
-                    .background(MaterialTheme.colorScheme.outline)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             )
             Text(
                 text = endFormatted,
@@ -292,16 +301,16 @@ private fun TimelineBlockCard(
 
         Spacer(Modifier.width(8.dp))
 
-        // Session Content & Sub-Note Drawer
+        // Session Content Card
         Surface(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)),
             modifier = Modifier
                 .weight(1f)
                 .clickable { expanded = !expanded }
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -312,19 +321,20 @@ private fun TimelineBlockCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Surface(
-                            color = ForestGreen.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(6.dp)
+                            color = ForestGreen.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 text = DateKeyUtils.formatDurationMinutes(session.durationMinutes.toInt()),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ForestGreen,
+                                fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(6.dp)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 text = session.category,
@@ -336,7 +346,7 @@ private fun TimelineBlockCard(
                         if (session.shieldActive) {
                             Icon(
                                 imageVector = Icons.Rounded.Shield,
-                                contentDescription = "Focus Shield active",
+                                contentDescription = "Study Mode active",
                                 tint = ForestGreen,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -352,6 +362,7 @@ private fun TimelineBlockCard(
                 }
 
                 Spacer(Modifier.height(8.dp))
+
                 Text(
                     text = session.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -360,119 +371,104 @@ private fun TimelineBlockCard(
                 )
 
                 if (session.tags.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         session.tags.forEach { tag ->
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                            Text(
+                                text = tag,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = ForestGreen
+                            )
                         }
                     }
                 }
 
-                // Expandable Sub-Note Drawer
+                // Expandable Session Notes
                 AnimatedVisibility(visible = expanded) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Deliverables & Notes",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Row {
-                                        IconButton(
-                                            onClick = { editingNotes = !editingNotes },
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.EditNote,
-                                                contentDescription = "Edit notes",
-                                                tint = ForestGreen,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                        IconButton(
-                                            onClick = onDelete,
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.DeleteOutline,
-                                                contentDescription = "Delete session",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    }
-                                }
+                    Column(modifier = Modifier.padding(top = 10.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        )
+                        Spacer(Modifier.height(10.dp))
 
-                                if (editingNotes) {
-                                    Spacer(Modifier.height(6.dp))
-                                    OutlinedTextField(
-                                        value = draftNotes,
-                                        onValueChange = { if (it.length <= 2000) draftNotes = it },
-                                        minLines = 3,
-                                        maxLines = 6,
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.fillMaxWidth()
+                        if (editingNotes) {
+                            OutlinedTextField(
+                                value = draftNotes,
+                                onValueChange = { draftNotes = it },
+                                label = { Text("Session Notes") },
+                                minLines = 2,
+                                maxLines = 4,
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(onClick = {
+                                    draftNotes = session.subNotes
+                                    editingNotes = false
+                                }) {
+                                    Text("Cancel")
+                                }
+                                Spacer(Modifier.width(6.dp))
+                                Button(
+                                    onClick = {
+                                        onSaveNotes(draftNotes.trim())
+                                        editingNotes = false
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ForestGreen,
+                                        contentColor = DarkBackground
                                     )
-                                    Spacer(Modifier.height(8.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.End
+                                ) {
+                                    Text("Save Notes", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = session.subNotes.ifBlank { "No notes attached to this session." },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (session.subNotes.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Row {
+                                    IconButton(
+                                        onClick = { editingNotes = true },
+                                        modifier = Modifier.size(32.dp)
                                     ) {
-                                        TextButton(onClick = {
-                                            draftNotes = session.subNotes
-                                            editingNotes = false
-                                        }) {
-                                            Text("Cancel")
-                                        }
-                                        Button(
-                                            onClick = {
-                                                onSaveNotes(draftNotes)
-                                                editingNotes = false
-                                            },
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = ForestGreen,
-                                                contentColor = DarkBackground
-                                            )
-                                        ) {
-                                            Text("Save")
-                                        }
+                                        Icon(
+                                            imageVector = Icons.Rounded.EditNote,
+                                            contentDescription = "Edit notes",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
-                                } else {
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = session.subNotes.ifBlank { "No deliverables recorded. Tap edit to add notes." },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    IconButton(
+                                        onClick = onDelete,
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.DeleteOutline,
+                                            contentDescription = "Delete session",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

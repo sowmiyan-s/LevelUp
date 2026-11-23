@@ -265,18 +265,18 @@ fun AuthScreen(
                 ) {
                     AuthFeatureItem(
                         icon = Icons.Rounded.Bolt,
-                        title = "Tactile Focus Timer",
-                        description = "Smooth dial timer feeding your daily 24-hour work timeline"
+                        title = "Study Mode Timer",
+                        description = "Smooth dial timer feeding your daily study timeline"
                     )
                     AuthFeatureItem(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Focus Coach",
-                        description = "Contextual daily briefings and structured day plans"
+                        title = "Daily Study Goals",
+                        description = "Set and track daily priorities with habit streaks"
                     )
                     AuthFeatureItem(
                         icon = Icons.Rounded.Shield,
-                        title = "Focus Shield & Streaks",
-                        description = "Distraction barriers and multi-tier streak tracking"
+                        title = "Distraction Shield",
+                        description = "Shield distracting apps and build daily momentum"
                     )
                 }
             }

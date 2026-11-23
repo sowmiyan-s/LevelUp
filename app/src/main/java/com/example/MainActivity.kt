@@ -100,10 +100,10 @@ private enum class LevelUpDestination(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    HOME("home", "Home", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
+    HOME("home", "Study", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
     TIMELINE("timeline", "Timeline", Icons.Rounded.Schedule, Icons.Outlined.Schedule),
     CALENDAR("calendar", "Calendar", Icons.Rounded.CalendarMonth, Icons.Outlined.CalendarMonth),
-    STATS("stats", "Stats", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
+    STATS("stats", "Settings", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
 }
 
 class MainActivity : ComponentActivity() {
@@ -431,8 +431,6 @@ private fun AuthenticatedLevelUpApp(
                                     HomeDashboardScreen(
                                         summary = summary,
                                         timerState = timerState,
-                                        briefingState = briefingState,
-                                        planState = planState,
                                         onSelectMinutes = viewModel::setPlannedMinutes,
                                         onSelectCategory = viewModel::selectFocusCategory,
                                         onStartStudyMode = viewModel::startStudyMode,
@@ -442,12 +440,15 @@ private fun AuthenticatedLevelUpApp(
                                         onOpenAddGoal = { showAddGoalDialog = true },
                                         onToggleGoal = viewModel::toggleGoal,
                                         onDeleteGoal = viewModel::deleteGoal,
-                                        onGenerateBriefing = viewModel::generateHeroBriefing,
-                                        onGeneratePlan = viewModel::generateAiDayPlan,
-                                        onAdoptSuggestedGoal = viewModel::adoptSuggestedGoal,
-                                        onClearPlan = viewModel::clearAiPlan,
-                                        onOpenCoachChat = { showCoachChatSheet = true },
-                                        onNavigateToShieldSettings = { navigateTo(LevelUpDestination.STATS.route) }
+                                        onUpdateBlockedApps = { updatedApps ->
+                                            viewModel.updateProfileSettings(
+                                                summary.profile.dailyTargetMinutes,
+                                                updatedApps,
+                                                summary.profile.darkModeEnabled,
+                                                summary.profile.hapticsEnabled
+                                            )
+                                        },
+                                        onNavigateToSettings = { navigateTo(LevelUpDestination.STATS.route) }
                                     )
                                 }
 
@@ -563,7 +564,7 @@ private fun AuthenticatedLevelUpApp(
 
             if (showCoachChatSheet) {
                 AiCoachChatBottomSheet(
-                    messages = chatMessages,
+                    chatMessages = chatMessages,
                     replyState = coachReplyState,
                     onSendMessage = viewModel::sendCoachMessage,
                     onDismiss = { showCoachChatSheet = false }

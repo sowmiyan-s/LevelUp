@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.MoreTime
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
@@ -75,7 +76,9 @@ import com.example.ui.theme.RoseError
 import com.example.viewmodel.TimerStatus
 import com.example.viewmodel.TimerUiState
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -92,7 +95,8 @@ fun InteractiveFocusDial(
     onStopAndLog: () -> Unit,
     onOpenShieldOverlay: () -> Unit,
     onExtendTimer: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    linkedGoalTitle: String? = null
 ) {
     val haptics = LocalHapticFeedback.current
     val isActive = timerState.status != TimerStatus.IDLE
@@ -184,10 +188,10 @@ fun InteractiveFocusDial(
 
             Spacer(Modifier.height(16.dp))
 
-            // Central Tactile Arc Dial with 5m to 180m range
+            // Central Tactile Arc Dial with 5m to 180m range (270° Sweep Gauge)
             Box(
                 modifier = Modifier
-                    .size(220.dp)
+                    .size(240.dp)
                     .pointerInput(timerState.status) {
                         if (timerState.status != TimerStatus.IDLE) return@pointerInput
                         detectDragGestures { change, _ ->
@@ -195,51 +199,131 @@ fun InteractiveFocusDial(
                             val center = Offset(size.width / 2f, size.height / 2f)
                             val dx = change.position.x - center.x
                             val dy = change.position.y - center.y
-                            var angleDeg = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90f
+                            var angleDeg = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
                             if (angleDeg < 0f) angleDeg += 360f
-                            // Scale 360 deg to 180 minutes (minimum 5m, step 5m)
-                            val mins = ((angleDeg / 360f) * 180f).roundToInt().coerceIn(5, 180)
-                            val snapped = ((mins + 2) / 5) * 5
-                            val finalMins = snapped.coerceIn(5, 180)
-                            if (finalMins != timerState.plannedMinutes && hapticsEnabled) {
-                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+
+                            // 270 deg sweep starts at 135 deg and ends at 405 deg (45 deg)
+                            val shiftedAngle = (angleDeg - 135f).let { if (it < 0f) it + 360f else it }
+                            if (shiftedAngle <= 270f) {
+                                val fraction = (shiftedAngle / 270f).coerceIn(0.02f, 1f)
+                                val mins = (fraction * 180f).roundToInt().coerceIn(5, 180)
+                                val snapped = ((mins + 2) / 5) * 5
+                                val finalMins = snapped.coerceIn(5, 180)
+                                if (finalMins != timerState.plannedMinutes && hapticsEnabled) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                onSelectMinutes(finalMins)
                             }
-                            onSelectMinutes(finalMins)
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val strokeWidth = 14.dp.toPx()
-                    val inset = strokeWidth / 2f + 8.dp.toPx()
+                    val inset = strokeWidth / 2f + 10.dp.toPx()
                     val arcSize = Size(size.width - inset * 2f, size.height - inset * 2f)
                     val topLeft = Offset(inset, inset)
 
-                    // Track
+                    // 270° Recessed Track (starts at 135°, sweeps 270°)
                     drawArc(
                         color = trackColor,
-                        startAngle = -90f,
-                        sweepAngle = 360f,
+                        startAngle = 135f,
+                        sweepAngle = 270f,
                         useCenter = false,
                         topLeft = topLeft,
                         size = arcSize,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
 
-                    // Active Progress
+                    // Active Progress Arc
+                    val activeSweep = (animatedProgress * 270f).coerceIn(2f, 270f)
                     drawArc(
                         color = progressColor,
-                        startAngle = -90f,
-                        sweepAngle = animatedProgress * 360f,
+                        startAngle = 135f,
+                        sweepAngle = activeSweep,
                         useCenter = false,
                         topLeft = topLeft,
                         size = arcSize,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+
+                    // Glowing Terminator Knob
+                    val knobAngleDeg = 135f + activeSweep
+                    val knobAngleRad = Math.toRadians(knobAngleDeg.toDouble())
+                    val centerX = size.width / 2f
+                    val centerY = size.height / 2f
+                    val arcRadius = (size.width - inset * 2f) / 2f
+                    val knobX = centerX + arcRadius * cos(knobAngleRad).toFloat()
+                    val knobY = centerY + arcRadius * sin(knobAngleRad).toFloat()
+                    val knobCenter = Offset(knobX, knobY)
+
+                    // Outer halo glow
+                    drawCircle(
+                        color = progressColor.copy(alpha = 0.35f),
+                        radius = strokeWidth * 0.95f,
+                        center = knobCenter
+                    )
+                    // Knob body
+                    drawCircle(
+                        color = progressColor,
+                        radius = strokeWidth * 0.65f,
+                        center = knobCenter
+                    )
+                    // Inner core dot
+                    drawCircle(
+                        color = Color.White,
+                        radius = strokeWidth * 0.25f,
+                        center = knobCenter
                     )
                 }
 
-                // Inner Readout
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Inner HUD Readout
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Session State Status Chip
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (timerState.status) {
+                                            TimerStatus.RUNNING -> ForestGreen
+                                            TimerStatus.PAUSED -> AmberStreak
+                                            TimerStatus.IDLE -> ForestGreen
+                                        }
+                                    )
+                            )
+                            Text(
+                                text = when (timerState.status) {
+                                    TimerStatus.RUNNING -> "FOCUSING"
+                                    TimerStatus.PAUSED -> "PAUSED"
+                                    TimerStatus.IDLE -> "READY"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = when (timerState.status) {
+                                    TimerStatus.RUNNING -> ForestGreen
+                                    TimerStatus.PAUSED -> AmberStreak
+                                    TimerStatus.IDLE -> ForestGreen
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
                     val displayText = if (isActive) {
                         DateKeyUtils.formatTimerSeconds(timerState.elapsedSeconds)
                     } else {
@@ -255,16 +339,39 @@ fun InteractiveFocusDial(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
+
                     Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = if (isActive) {
-                            "${timerState.selectedCategory.label} • Target ${timerState.plannedMinutes}m"
-                        } else {
-                            "Drag dial • Range 5m to 3h"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
+                    if (!linkedGoalTitle.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Rounded.Schedule, contentDescription = null, modifier = Modifier.size(12.dp), tint = ForestGreen)
+                                Text(
+                                    text = linkedGoalTitle,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = if (isActive) {
+                                "${timerState.selectedCategory.label} • Target ${timerState.plannedMinutes}m"
+                            } else {
+                                "Drag dial • Range 5m to 3h"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -272,7 +379,29 @@ fun InteractiveFocusDial(
 
             // Presets and Categories (Idle State)
             if (!isActive) {
-                // Radio/Quick selector chips
+                // Preset Sprints Header Row
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "PRESET SPRINTS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Selected: ${timerState.plannedMinutes}m",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ForestGreen,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Presets Flex row with Custom chip
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -283,44 +412,51 @@ fun InteractiveFocusDial(
                         val label = if (mins >= 60) {
                             if (mins % 60 == 0) "${mins / 60}h" else "${mins / 60}h ${mins % 60}m"
                         } else "${mins}m"
-                        FilterChip(
-                            selected = selected,
-                            onClick = {
-                                if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onSelectMinutes(mins)
-                            },
-                            label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                        Surface(
                             shape = RoundedCornerShape(10.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen.copy(alpha = 0.2f),
-                                selectedLabelColor = ForestGreen
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = selected,
-                                selectedBorderColor = ForestGreen,
-                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
+                            color = if (selected) ForestGreen else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, if (selected) ForestGreen else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onSelectMinutes(mins)
+                                }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (selected) DarkBackground else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    // Custom Button chip
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .clickable { showCustomTimeDialog = true }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Custom", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Custom Time button
-                OutlinedButton(
-                    onClick = { showCustomTimeDialog = true },
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                    modifier = Modifier.fillMaxWidth().height(38.dp)
-                ) {
-                    Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Custom Duration (hr / min)", style = MaterialTheme.typography.labelMedium)
-                }
-
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Category Chips
                 FlowRow(
@@ -330,22 +466,20 @@ fun InteractiveFocusDial(
                 ) {
                     WorkCategory.entries.forEach { cat ->
                         val selected = timerState.selectedCategory == cat
-                        FilterChip(
-                            selected = selected,
-                            onClick = { onSelectCategory(cat) },
-                            label = { Text(cat.label, style = MaterialTheme.typography.labelSmall) },
+                        Surface(
                             shape = RoundedCornerShape(10.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestGreen.copy(alpha = 0.2f),
-                                selectedLabelColor = ForestGreen
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = selected,
-                                selectedBorderColor = ForestGreen,
-                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                            color = if (selected) ForestGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(1.dp, if (selected) ForestGreen else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+                            modifier = Modifier.clickable { onSelectCategory(cat) }
+                        ) {
+                            Text(
+                                text = cat.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selected) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
-                        )
+                        }
                     }
                 }
 

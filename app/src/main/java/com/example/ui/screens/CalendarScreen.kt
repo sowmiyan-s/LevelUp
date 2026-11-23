@@ -458,7 +458,7 @@ private fun CalendarDayCell(
                     if (hasSuccess) {
                         Box(
                             modifier = Modifier
-                                .size(4.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(ForestGreen)
                         )
@@ -466,7 +466,7 @@ private fun CalendarDayCell(
                     if (hasFailed) {
                         Box(
                             modifier = Modifier
-                                .size(4.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(RoseError)
                         )
@@ -474,7 +474,7 @@ private fun CalendarDayCell(
                     if (hasFocus && !hasSuccess && !hasFailed) {
                         Box(
                             modifier = Modifier
-                                .size(4.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(AmberStreak)
                         )

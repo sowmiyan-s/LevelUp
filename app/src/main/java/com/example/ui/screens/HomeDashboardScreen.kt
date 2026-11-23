@@ -26,14 +26,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -42,6 +45,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -137,36 +141,49 @@ fun HomeDashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = DateKeyUtils.formatDateHeader(today),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Spacer(Modifier.height(2.dp))
                         Text(
-                            text = DateKeyUtils.formatDateHeader(today),
+                            text = "Study Cockpit",
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Daily Focus & Study Command",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     // Consecutive Day Streak Pill
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = AmberStreak.copy(alpha = 0.15f),
                         border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.4f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.LocalFireDepartment,
                                 contentDescription = "Streak",
                                 tint = AmberStreak,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "${summary.currentStreak} Day Streak",
                                 style = MaterialTheme.typography.labelMedium,
@@ -187,8 +204,8 @@ fun HomeDashboardScreen(
 
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = ForestGreen.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, ForestGreen.copy(alpha = 0.5f)),
+                        color = AmberStreak.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, AmberStreak.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -201,20 +218,20 @@ fun HomeDashboardScreen(
                             Row(
                                 modifier = Modifier.weight(1f),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(ForestGreen.copy(alpha = 0.2f)),
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(AmberStreak.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.Bolt,
+                                        imageVector = Icons.Rounded.Schedule,
                                         contentDescription = null,
-                                        tint = ForestGreen,
-                                        modifier = Modifier.size(20.dp)
+                                        tint = AmberStreak,
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
 
@@ -223,11 +240,17 @@ fun HomeDashboardScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(AmberStreak)
+                                        )
                                         Text(
                                             text = if (isRunningNow) "ACTIVE TASK NOW" else "UPCOMING TASK",
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = ForestGreen
+                                            color = AmberStreak
                                         )
                                         Text(
                                             text = "• ${DateKeyUtils.formatMinuteOfDay(activeTask.startMinuteOfDay.toInt())} - ${DateKeyUtils.formatMinuteOfDay(endMinute.toInt())}",
@@ -235,6 +258,7 @@ fun HomeDashboardScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
+                                    Spacer(Modifier.height(2.dp))
                                     Text(
                                         text = activeTask.title,
                                         style = MaterialTheme.typography.titleMedium,
@@ -258,15 +282,15 @@ fun HomeDashboardScreen(
                                 onClick = { onStartTaskStudy(activeTask) },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = ForestGreen,
+                                    containerColor = AmberStreak,
                                     contentColor = DarkBackground
                                 ),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.height(38.dp)
                             ) {
-                                Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
                                 Text("Study Now", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.width(4.dp))
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -287,7 +311,8 @@ fun HomeDashboardScreen(
                     onResume = onStartStudyMode,
                     onStopAndLog = onStopAndLog,
                     onOpenShieldOverlay = onOpenShieldOverlay,
-                    onExtendTimer = onExtendTimer
+                    onExtendTimer = onExtendTimer,
+                    linkedGoalTitle = summary.goals.find { it.id == timerState.linkedGoalId }?.title
                 )
             }
 
@@ -401,7 +426,7 @@ fun HomeDashboardScreen(
                 }
             }
 
-            // Study Mode Blocked Apps Quick Card (with Real App Icons)
+            // Study Mode Blocked Apps Quick Card (with Real App Icons & Lock Badges)
             item {
                 val blockedApps = summary.profile.shieldedApps
                 Surface(
@@ -422,7 +447,7 @@ fun HomeDashboardScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(34.dp)
                                         .clip(CircleShape)
                                         .background(ForestGreen.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center
@@ -431,96 +456,150 @@ fun HomeDashboardScreen(
                                         imageVector = Icons.Rounded.Shield,
                                         contentDescription = null,
                                         tint = ForestGreen,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 Column {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "Study Mode Lockdown",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = ForestGreen.copy(alpha = 0.15f)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(5.dp)
+                                                        .clip(CircleShape)
+                                                        .background(ForestGreen)
+                                                )
+                                                Text(
+                                                    text = "ACTIVE",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = ForestGreen
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
-                                        text = "Study Mode Lockdown",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "${blockedApps.size} apps blocked during sessions",
+                                        text = "Internet & distractions locked during active focus session",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
+                        }
 
-                            Button(
+                        Spacer(Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "SHIELDED TARGETS (${blockedApps.size})",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            TextButton(
                                 onClick = { showAddAppDialog = true },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = ForestGreen.copy(alpha = 0.15f),
-                                    contentColor = ForestGreen
-                                ),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                                modifier = Modifier.height(34.dp)
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                             ) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(14.dp), tint = ForestGreen)
                                 Spacer(Modifier.width(4.dp))
-                                Text("Add", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text("Manage Apps", style = MaterialTheme.typography.labelSmall, color = ForestGreen, fontWeight = FontWeight.Bold)
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(8.dp))
 
                         if (blockedApps.isNotEmpty()) {
                             FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 blockedApps.forEach { appName ->
                                     val appInfo = remember(appName) { InstalledAppsHelper.getAppInfo(context, appName) }
 
                                     Surface(
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                        modifier = Modifier.width(68.dp)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            if (appInfo.iconBitmap != null) {
-                                                Image(
-                                                    bitmap = appInfo.iconBitmap,
-                                                    contentDescription = appName,
-                                                    modifier = Modifier.size(20.dp).clip(RoundedCornerShape(4.dp))
-                                                )
-                                                Spacer(Modifier.width(6.dp))
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Shield,
-                                                    contentDescription = null,
-                                                    tint = ForestGreen,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier.size(40.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (appInfo.iconBitmap != null) {
+                                                    Image(
+                                                        bitmap = appInfo.iconBitmap,
+                                                        contentDescription = appName,
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                    )
+                                                } else {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Shield,
+                                                            contentDescription = null,
+                                                            tint = ForestGreen,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                                // Mini Lock Badge
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(14.dp)
+                                                        .clip(CircleShape)
+                                                        .background(DarkBackground)
+                                                        .align(Alignment.BottomEnd),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Lock,
+                                                        contentDescription = "Locked",
+                                                        tint = ForestGreen,
+                                                        modifier = Modifier.size(9.dp)
+                                                    )
+                                                }
                                             }
+                                            Spacer(Modifier.height(4.dp))
                                             Text(
                                                 text = appInfo.appName,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurface,
-                                                fontWeight = FontWeight.Medium
+                                                maxLines = 1,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                             )
-                                            Spacer(Modifier.width(4.dp))
-                                            IconButton(
-                                                onClick = {
-                                                    val updated = blockedApps.filterNot { it.equals(appName, ignoreCase = true) }
-                                                    onUpdateBlockedApps(updated)
-                                                },
-                                                modifier = Modifier.size(20.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Close,
-                                                    contentDescription = "Remove $appName",
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                            }
                                         }
                                     }
                                 }
@@ -531,12 +610,23 @@ fun HomeDashboardScreen(
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = "No apps blocked. Tap '+ Add' above to block social and distracting apps during Study Mode.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(12.dp)
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showAddAppDialog = true }
+                                        .padding(14.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = "Add Apps to Block During Study Mode",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = ForestGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             }
                         }
                     }

@@ -39,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -227,16 +228,47 @@ fun TasksScreen(
                 }
             }
 
-            // Daily Stats Strip
+            // Daily Stats Strip & Progress
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TaskMetricCard("Total", "${dayTasks.size}", MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-                    TaskMetricCard("Completed", "$completedCount", ForestGreen, Modifier.weight(1f))
-                    TaskMetricCard("Pending", "$pendingCount", AmberStreak, Modifier.weight(1f))
-                    TaskMetricCard("Failed", "$failedCount", RoseError, Modifier.weight(1f))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TaskMetricCard("Total", "${dayTasks.size}", MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
+                        TaskMetricCard("Completed", "$completedCount", ForestGreen, Modifier.weight(1f))
+                        TaskMetricCard("Pending", "$pendingCount", AmberStreak, Modifier.weight(1f))
+                        TaskMetricCard("Failed", "$failedCount", RoseError, Modifier.weight(1f))
+                    }
+
+                    if (dayTasks.isNotEmpty()) {
+                        val completionFraction = (completedCount.toFloat() / dayTasks.size.toFloat()).coerceIn(0f, 1f)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                LinearProgressIndicator(
+                                    progress = { completionFraction },
+                                    color = ForestGreen,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape)
+                                )
+                                Text(
+                                    text = "${(completionFraction * 100).toInt()}% Done",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (completionFraction == 1f) ForestGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -341,15 +373,23 @@ private fun TaskMetricCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(
+                modifier = Modifier
+                    .width(20.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color)
+            )
+            Spacer(Modifier.height(6.dp))
             Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
             Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
@@ -435,59 +436,76 @@ fun InsightsScreen(
 
                         if (blockedApps.isNotEmpty()) {
                             FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 blockedApps.forEach { appName ->
                                     val appInfo = remember(appName) { InstalledAppsHelper.getAppInfo(context, appName) }
 
                                     Surface(
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                        modifier = Modifier.width(68.dp)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            if (appInfo.iconBitmap != null) {
-                                                Image(
-                                                    bitmap = appInfo.iconBitmap,
-                                                    contentDescription = appName,
-                                                    modifier = Modifier.size(20.dp).clip(RoundedCornerShape(4.dp))
-                                                )
-                                                Spacer(Modifier.width(6.dp))
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Shield,
-                                                    contentDescription = null,
-                                                    tint = ForestGreen,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier.size(40.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (appInfo.iconBitmap != null) {
+                                                    Image(
+                                                        bitmap = appInfo.iconBitmap,
+                                                        contentDescription = appName,
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                    )
+                                                } else {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Shield,
+                                                            contentDescription = null,
+                                                            tint = ForestGreen,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                }
+                                                // Mini Lock Badge
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(14.dp)
+                                                        .clip(CircleShape)
+                                                        .background(DarkBackground)
+                                                        .align(Alignment.BottomEnd),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Lock,
+                                                        contentDescription = "Locked",
+                                                        tint = ForestGreen,
+                                                        modifier = Modifier.size(9.dp)
+                                                    )
+                                                }
                                             }
-
+                                            Spacer(Modifier.height(4.dp))
                                             Text(
                                                 text = appInfo.appName,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurface,
-                                                fontWeight = FontWeight.Medium
+                                                maxLines = 1,
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                             )
-                                            Spacer(Modifier.width(4.dp))
-                                            IconButton(
-                                                onClick = {
-                                                    val updated = blockedApps.filterNot { it.equals(appName, ignoreCase = true) }
-                                                    onUpdateSettings(profile.dailyTargetMinutes, updated, profile.darkModeEnabled, profile.hapticsEnabled)
-                                                },
-                                                modifier = Modifier.size(20.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Close,
-                                                    contentDescription = "Remove $appName",
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                            }
                                         }
                                     }
                                 }

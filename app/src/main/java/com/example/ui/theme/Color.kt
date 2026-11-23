@@ -7,21 +7,23 @@ import androidx.compose.ui.graphics.Color
 // Level Up — Modern Premium Design Tokens
 // ==========================================
 
-// Core Brand Accents (Luminous Emerald & Mint)
+// Core Brand Accents (Luminous Emerald, Electric Bio-Lime & Mint)
 val ForestGreen = Color(0xFF10B981)       // Emerald 500 - Radiant primary
 val ForestGreenDark = Color(0xFF059669)   // Emerald 600 - Deeper accent
 val ForestGreenLight = Color(0xFF34D399)  // Emerald 400 - Vivid glow
+val ElectricLime = Color(0xFF72FE00)      // Bio-Precision Neon Lime (Stitch design accent)
+val BioCyan = Color(0xFF00E5FF)           // Bio-Cyan Focus accent
 val StudyEmeraldGlow = Color(0xFF0D9488)  // Teal 600 - Secondary depth
 val SageTintDark = Color(0xFF0F291E)      // Ambient green glow for dark mode
 val SageTintLight = Color(0xFFDCFCE7)     // Soft mint wash for light mode
 
-// Neutral Dark Surfaces (Midnight Obsidian & Rich Indigo Slate)
-val DarkBackground = Color(0xFF0A0D14)       // Deep luxury midnight (never muddy gray)
-val DarkSurface = Color(0xFF121622)          // Layer 1 card surface
-val DarkSurfaceElevated = Color(0xFF181F2E)  // Layer 2 elevated dialogs, floating cards
-val DarkSurfaceVariant = Color(0xFF222B3D)   // Interactive chip tracks & buttons
-val DarkOutline = Color(0xFF232D3F)          // Refined 0.5dp/1dp hairline border
-val DarkOutlineSubtle = Color(0xFF18202D)    // Subtlest divider
+// Neutral Dark Surfaces (Midnight Obsidian & Rich Bio-Titanium Slate)
+val DarkBackground = Color(0xFF0E1218)       // Deep luxury midnight obsidian
+val DarkSurface = Color(0xFF151B24)          // Layer 1 card surface
+val DarkSurfaceElevated = Color(0xFF1C2432)  // Layer 2 elevated dialogs, floating cards
+val DarkSurfaceVariant = Color(0xFF253042)   // Interactive chip tracks & buttons
+val DarkOutline = Color(0xFF2C394E)          // Refined 1dp hairline border
+val DarkOutlineSubtle = Color(0xFF1D2635)    // Subtlest divider
 val DarkOnSurface = Color(0xFFF8FAFC)        // Slate 50 - Ultra-crisp primary text
 val DarkOnSurfaceMuted = Color(0xFF94A3B8)   // Slate 400 - Readable secondary text
 val DarkOnSurfaceSubtle = Color(0xFF64748B)  // Slate 500 - Auxiliary labels

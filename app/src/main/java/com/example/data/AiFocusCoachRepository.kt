@@ -1,6 +1,7 @@
 package com.example.data
 
 import android.util.Log
+import com.example.config.AppConfig
 import com.example.model.AiPlanSuggestion
 import com.example.model.AiSuggestedGoal
 import com.example.model.GoalTier
@@ -21,7 +22,7 @@ class AiFocusCoachRepository {
 
     private val coachModel by lazy {
         Firebase.ai.generativeModel(
-            modelName = "gemini-3.8-flash"
+            modelName = AppConfig.AiCoach.MODEL_NAME
         )
     }
 
@@ -36,7 +37,7 @@ class AiFocusCoachRepository {
                             "title" to Schema.string(description = "Concise actionable goal title under 60 characters"),
                             "targetMinutes" to Schema.integer(description = "Recommended duration in minutes (15 to 180)"),
                             "category" to Schema.enumeration(
-                                values = listOf("Deep Work", "Code", "Study", "Design", "Reading", "Fitness"),
+                                values = AppConfig.AiCoach.DEFAULT_CATEGORIES,
                                 description = "Work category"
                             ),
                             "tier" to Schema.enumeration(
@@ -54,7 +55,7 @@ class AiFocusCoachRepository {
 
     private val plannerModel by lazy {
         Firebase.ai.generativeModel(
-            modelName = "gemini-3.8-flash",
+            modelName = AppConfig.AiCoach.MODEL_NAME,
             generationConfig = generationConfig {
                 responseMimeType = "application/json"
                 responseSchema = planSchema
@@ -64,17 +65,14 @@ class AiFocusCoachRepository {
 
     fun streamFocusBriefing(contextSummary: String): Flow<String> = flow {
         val prompt = """
-            You are the AI Focus Coach inside Level Up, a bio-tech deep work logger & focus shield app.
-            Based on the user's live focus telemetry below, write a sharp, motivating, zero-fluff 2-3 sentence briefing.
-            Highlight their strongest lever right now and recommend the ideal next focus block length.
-            Do not use markdown headers or emojis.
+            ${AppConfig.AiCoach.BRIEFING_SYSTEM_PROMPT.trimIndent()}
             
             Telemetry:
             $contextSummary
         """.trimIndent()
 
         val accumulated = StringBuilder()
-        withTimeout(60_000L) {
+        withTimeout(AppConfig.AiCoach.TIMEOUT_MS) {
             coachModel.generateContentStream(prompt).collect { chunk ->
                 val chunkText = chunk.text.orEmpty()
                 if (chunkText.isNotEmpty()) {
@@ -93,8 +91,7 @@ class AiFocusCoachRepository {
         contextSummary: String
     ): Flow<String> = flow {
         val prompt = """
-            You are the Level Up AI Focus Coach. Give concise, practical, science-backed deep work advice.
-            Keep your reply focused, structured with short bullet points when helpful, and under 140 words.
+            ${AppConfig.AiCoach.COACH_CHAT_SYSTEM_PROMPT.trimIndent()}
             
             User's current focus context:
             $contextSummary
@@ -104,7 +101,7 @@ class AiFocusCoachRepository {
         """.trimIndent()
 
         val accumulated = StringBuilder()
-        withTimeout(60_000L) {
+        withTimeout(AppConfig.AiCoach.TIMEOUT_MS) {
             coachModel.generateContentStream(prompt).collect { chunk ->
                 val chunkText = chunk.text.orEmpty()
                 if (chunkText.isNotEmpty()) {

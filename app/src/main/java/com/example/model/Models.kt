@@ -1,6 +1,7 @@
 package com.example.model
 
 import androidx.annotation.Keep
+import com.example.config.AppConfig
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.IgnoreExtraProperties
@@ -63,8 +64,8 @@ data class UserProfile(
     @DocumentId val id: String = "",
     val userId: String = "",
     val displayName: String = "",
-    val dailyTargetMinutes: Long = 360L,
-    val streakFreezes: Long = 2L,
+    val dailyTargetMinutes: Long = AppConfig.UserProfile.DEFAULT_DAILY_TARGET_MINUTES,
+    val streakFreezes: Long = AppConfig.UserProfile.DEFAULT_STREAK_FREEZES,
     val shieldedApps: List<String> = DEFAULT_SHIELDED_APPS,
     val darkModeEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
@@ -72,22 +73,8 @@ data class UserProfile(
     @ServerTimestamp val updatedAt: Timestamp? = null
 ) {
     companion object {
-        val DEFAULT_SHIELDED_APPS = listOf(
-            "Instagram",
-            "X / Twitter",
-            "YouTube",
-            "TikTok"
-        )
-        val AVAILABLE_DISTRACTION_APPS = listOf(
-            "Instagram",
-            "X / Twitter",
-            "YouTube",
-            "TikTok",
-            "Reddit",
-            "Discord",
-            "Twitch",
-            "Netflix"
-        )
+        val DEFAULT_SHIELDED_APPS = AppConfig.UserProfile.DEFAULT_SHIELDED_APPS
+        val AVAILABLE_DISTRACTION_APPS = AppConfig.UserProfile.AVAILABLE_DISTRACTION_APPS
     }
 }
 
@@ -137,18 +124,6 @@ data class DayStatus(
     @ServerTimestamp val updatedAt: Timestamp? = null
 )
 
-@Keep
-@IgnoreExtraProperties
-data class TaskLog(
-    @DocumentId val id: String = "",
-    val userId: String = "",
-    val workDone: String = "",
-    val category: String = WorkCategory.DEEP_WORK.label,
-    val durationMinutes: Long? = null,
-    @ServerTimestamp val createdAt: Timestamp? = null,
-    @ServerTimestamp val updatedAt: Timestamp? = null
-)
-
 data class AiSuggestedGoal(
     val title: String,
     val targetMinutes: Int,
@@ -187,8 +162,6 @@ object DateKeyUtils {
     private val keyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val displayFormat = SimpleDateFormat("EEE, MMM d", Locale.US)
     private val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
-    private val timeOnlyFormat = SimpleDateFormat("h:mm a", Locale.US)
-    private val dateTimeFormat = SimpleDateFormat("MMM d • h:mm a", Locale.US)
 
     fun todayKey(): String = synchronized(keyFormat) {
         keyFormat.format(Calendar.getInstance().time)
@@ -270,18 +243,5 @@ object DateKeyUtils {
         val mins = (safe % 3600) / 60
         val secs = safe % 60
         return String.format(Locale.US, "%02d:%02d:%02d", hrs, mins, secs)
-    }
-
-    fun formatTimestamp(timestamp: Timestamp?): String {
-        if (timestamp == null) return "Just now"
-        val date = timestamp.toDate()
-        val cal = Calendar.getInstance().apply { time = date }
-        val dayKey = formatKey(cal)
-        val today = todayKey()
-        return when (dayKey) {
-            today -> synchronized(timeOnlyFormat) { "Today • ${timeOnlyFormat.format(date)}" }
-            shiftDays(today, -1) -> synchronized(timeOnlyFormat) { "Yesterday • ${timeOnlyFormat.format(date)}" }
-            else -> synchronized(dateTimeFormat) { dateTimeFormat.format(date) }
-        }
     }
 }

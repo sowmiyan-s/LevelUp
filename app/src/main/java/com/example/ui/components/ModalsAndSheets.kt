@@ -1,7 +1,6 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,15 +61,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.R
 import com.example.model.AiCoachState
 import com.example.model.ChatMessage
 import com.example.model.DateKeyUtils
@@ -177,13 +173,6 @@ fun AddGoalDialog(
                         FilterChip(
                             selected = selectedCategory == cat,
                             onClick = { selectedCategory = cat },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = categoryIconRes(cat.label)),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            },
                             label = { Text(cat.label) }
                         )
                     }
@@ -317,13 +306,6 @@ fun LogSessionDialog(
                         FilterChip(
                             selected = selectedCategory == cat,
                             onClick = { selectedCategory = cat },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = categoryIconRes(cat.label)),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            },
                             label = { Text(cat.label) }
                         )
                     }
@@ -419,10 +401,6 @@ fun FocusShieldOverlayDialog(
                         listOf(Emerald950, Emerald900, Color(0xFF041D15))
                     )
                 )
-                .bioTechGridPattern(
-                    dotColor = Mint400.copy(alpha = 0.16f),
-                    lineColor = Emerald500.copy(alpha = 0.08f)
-                )
                 .safeDrawingPadding()
                 .padding(24.dp)
         ) {
@@ -473,17 +451,18 @@ fun FocusShieldOverlayDialog(
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Surface(
-                        shape = CircleShape,
-                        border = BorderStroke(2.dp, Mint400.copy(alpha = 0.7f)),
-                        tonalElevation = 8.dp,
-                        modifier = Modifier.size(112.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(92.dp)
+                            .clip(CircleShape)
+                            .background(Emerald500.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.img_focus_shield_emblem),
-                            contentDescription = "Focus Shield Active Emblem",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                        Icon(
+                            imageVector = Icons.Rounded.Shield,
+                            contentDescription = "Focus Shield Active",
+                            tint = Mint400,
+                            modifier = Modifier.size(48.dp)
                         )
                     }
 

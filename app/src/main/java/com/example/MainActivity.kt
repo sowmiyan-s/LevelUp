@@ -24,12 +24,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Dashboard
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -86,7 +84,6 @@ import com.example.ui.components.LogSessionDialog
 import com.example.ui.screens.CalendarScreen
 import com.example.ui.screens.HomeDashboardScreen
 import com.example.ui.screens.StatsAndShieldScreen
-import com.example.ui.screens.TaskLogScreen
 import com.example.ui.screens.TimelineScreen
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.LevelUpTheme
@@ -105,7 +102,6 @@ private enum class LevelUpDestination(
     val unselectedIcon: ImageVector
 ) {
     HOME("home", "Home", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
-    LOG("log", "Log", Icons.Rounded.EditNote, Icons.Outlined.EditNote),
     TIMELINE("timeline", "Timeline", Icons.Rounded.Schedule, Icons.Outlined.Schedule),
     CALENDAR("calendar", "Calendar", Icons.Rounded.CalendarMonth, Icons.Outlined.CalendarMonth),
     STATS("stats", "Stats", Icons.Rounded.Analytics, Icons.Outlined.Analytics)
@@ -131,8 +127,17 @@ private fun AppContent() {
     val scope = rememberCoroutineScope()
     val credentialManager = remember(context) { CredentialManager.create(context) }
 
-    var currentUser by remember { mutableStateOf(Firebase.auth.currentUser) }
-    var checkingAutoSignIn by remember { mutableStateOf(Firebase.auth.currentUser == null) }
+    var isGuestMode by remember { mutableStateOf(false) }
+    var currentUser by remember {
+        mutableStateOf(
+            try {
+                Firebase.auth.currentUser
+            } catch (e: Exception) {
+                null
+            }
+        )
+    }
+    var checkingAutoSignIn by remember { mutableStateOf(currentUser == null && !isGuestMode) }
 
     DisposableEffect(Unit) {
         val listener = FirebaseAuth.AuthStateListener { auth ->
@@ -141,12 +146,18 @@ private fun AppContent() {
                 checkingAutoSignIn = false
             }
         }
-        Firebase.auth.addAuthStateListener(listener)
-        onDispose { Firebase.auth.removeAuthStateListener(listener) }
+        try {
+            Firebase.auth.addAuthStateListener(listener)
+        } catch (_: Exception) {}
+        onDispose {
+            try {
+                Firebase.auth.removeAuthStateListener(listener)
+            } catch (_: Exception) {}
+        }
     }
 
     LaunchedEffect(Unit) {
-        if (Firebase.auth.currentUser == null) {
+        if (currentUser == null && !isGuestMode) {
             attemptAutoSignIn(
                 context = context,
                 credentialManager = credentialManager,
@@ -158,7 +169,7 @@ private fun AppContent() {
     }
 
     val user = currentUser
-    if (user == null) {
+    if (user == null && !isGuestMode) {
         LevelUpTheme(darkTheme = true) {
             if (checkingAutoSignIn) {
                 Box(
@@ -170,20 +181,38 @@ private fun AppContent() {
                     CircularProgressIndicator(color = Mint400)
                 }
             } else {
-                AuthScreen(onAuthSuccess = { currentUser = Firebase.auth.currentUser })
+                AuthScreen(
+                    onAuthSuccess = {
+                        currentUser = try {
+                            Firebase.auth.currentUser
+                        } catch (_: Exception) {
+                            null
+                        }
+                    },
+                    onContinueAsGuest = {
+                        isGuestMode = true
+                    }
+                )
             }
         }
     } else {
-        key(user.uid) {
+        val userId = user?.uid ?: "guest_focus_builder"
+        val displayName = user?.displayName ?: "Guest Explorer"
+        val userEmail = user?.email
+        key(userId) {
             AuthenticatedLevelUpApp(
-                currentUserId = user.uid,
-                displayName = user.displayName ?: "Focus Builder",
-                userEmail = user.email,
+                currentUserId = userId,
+                displayName = displayName,
+                userEmail = userEmail,
                 onSignOut = {
-                    signOut(
-                        credentialManager = credentialManager,
-                        scope = scope
-                    )
+                    if (isGuestMode) {
+                        isGuestMode = false
+                    } else {
+                        signOut(
+                            credentialManager = credentialManager,
+                            scope = scope
+                        )
+                    }
                 }
             )
         }
@@ -204,8 +233,20 @@ private fun AuthenticatedLevelUpApp(
                 val app = checkNotNull(this[APPLICATION_KEY]) {
                     "APPLICATION_KEY missing from CreationExtras"
                 }
-                val databaseId = app.getString(R.string.firestore_database_id)
-                val db = FirebaseFirestore.getInstance(databaseId)
+                val databaseId = try {
+                    app.getString(R.string.firestore_database_id)
+                } catch (_: Exception) {
+                    null
+                }
+                val db = try {
+                    if (!databaseId.isNullOrBlank()) {
+                        FirebaseFirestore.getInstance(databaseId)
+                    } else {
+                        FirebaseFirestore.getInstance()
+                    }
+                } catch (_: Exception) {
+                    FirebaseFirestore.getInstance()
+                }
                 LevelUpViewModel(
                     repository = LevelUpRepository(db),
                     aiRepository = AiFocusCoachRepository(),
@@ -222,7 +263,6 @@ private fun AuthenticatedLevelUpApp(
     val planState by viewModel.planState.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
     val coachReplyState by viewModel.coachReplyState.collectAsStateWithLifecycle()
-    val isSavingTaskLog by viewModel.isSavingTaskLog.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
 
     val darkTheme = (dashboardState as? UiState.Success)?.data?.profile?.darkModeEnabled ?: true
@@ -405,15 +445,6 @@ private fun AuthenticatedLevelUpApp(
                                         onClearPlan = viewModel::clearAiPlan,
                                         onOpenCoachChat = { showCoachChatSheet = true },
                                         onNavigateToShieldSettings = { navigateTo(LevelUpDestination.STATS.route) }
-                                    )
-                                }
-
-                                composable(LevelUpDestination.LOG.route) {
-                                    TaskLogScreen(
-                                        summary = summary,
-                                        isSavingLog = isSavingTaskLog,
-                                        onSaveTaskLog = viewModel::addTaskLog,
-                                        onDeleteTaskLog = viewModel::deleteTaskLog
                                     )
                                 }
 

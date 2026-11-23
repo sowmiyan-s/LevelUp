@@ -60,7 +60,6 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.example.R
-import com.example.ui.components.bioTechGridPattern
 import com.example.ui.theme.Crimson500
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.Emerald700
@@ -187,7 +186,8 @@ fun signOut(
 
 @Composable
 fun AuthScreen(
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: () -> Unit,
+    onContinueAsGuest: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -202,10 +202,6 @@ fun AuthScreen(
                 Brush.verticalGradient(
                     listOf(Emerald950, Emerald900, Color(0xFF042218))
                 )
-            )
-            .bioTechGridPattern(
-                dotColor = Mint400.copy(alpha = 0.10f),
-                lineColor = Emerald500.copy(alpha = 0.05f)
             )
             .safeDrawingPadding()
     ) {
@@ -389,6 +385,27 @@ fun AuthScreen(
                         fontWeight = FontWeight.Bold
                     )
                 }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            androidx.compose.material3.OutlinedButton(
+                onClick = onContinueAsGuest,
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Mint400.copy(alpha = 0.45f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Mint200
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .testTag("guest_mode_button")
+            ) {
+                Text(
+                    text = "Continue as Guest (Demo Mode)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             Spacer(Modifier.height(12.dp))

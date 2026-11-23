@@ -2,12 +2,13 @@ package com.example.data
 
 import android.content.Context
 import com.example.R
+import com.example.config.AppConfig
 import com.example.firebase.OperationType
 import com.example.firebase.handleFirestoreError
 import com.example.model.DailyGoal
+import com.example.model.DateKeyUtils
 import com.example.model.DayStatus
 import com.example.model.GoalTier
-import com.example.model.TaskLog
 import com.example.model.UserProfile
 import com.example.model.WorkSession
 import com.google.firebase.Firebase
@@ -17,20 +18,64 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class LevelUpRepository(
     private val db: FirebaseFirestore,
     private val auth: FirebaseAuth = Firebase.auth
 ) {
+    companion object {
+        const val GUEST_USER_ID = "guest_focus_builder"
+    }
+
+    private val guestProfile = MutableStateFlow(
+        UserProfile(
+            id = GUEST_USER_ID,
+            userId = GUEST_USER_ID,
+            displayName = "Guest Explorer",
+            dailyTargetMinutes = 180,
+            streakFreezes = 2
+        )
+    )
+
+    private val guestGoals = MutableStateFlow(
+        listOf(
+            DailyGoal(
+                id = "goal_demo_1",
+                userId = GUEST_USER_ID,
+                dateKey = DateKeyUtils.todayKey(),
+                title = "Deep Work: Architecture & Core Systems",
+                targetMinutes = 60,
+                category = "Deep Work",
+                tier = GoalTier.ESSENTIAL.name,
+                completed = false
+            ),
+            DailyGoal(
+                id = "goal_demo_2",
+                userId = GUEST_USER_ID,
+                dateKey = DateKeyUtils.todayKey(),
+                title = "Bio-Tech UI Polish & Focus Dial Test",
+                targetMinutes = 45,
+                category = "Code",
+                tier = GoalTier.OPTIONAL.name,
+                completed = false
+            )
+        )
+    )
+
+    private val guestSessions = MutableStateFlow<List<WorkSession>>(emptyList())
+    private val guestDayStatuses = MutableStateFlow<List<DayStatus>>(emptyList())
+
     constructor(context: Context) : this(
         FirebaseFirestore.getInstance(
             context.applicationContext.getString(R.string.firestore_database_id)
@@ -38,17 +83,21 @@ class LevelUpRepository(
     )
 
     private fun requireUserId(expectedUserId: String? = null): String {
-        val uid = auth.currentUser?.uid
-            ?: throw IllegalStateException("User must be signed in with Google before accessing Firestore.")
-        if (expectedUserId != null) {
-            check(uid == expectedUserId) { "Signed-in user changed; refusing cross-user operation." }
+        val uid = auth.currentUser?.uid ?: expectedUserId
+            ?: throw IllegalStateException("User must be signed in before accessing Firestore.")
+        if (auth.currentUser != null && expectedUserId != null) {
+            check(auth.currentUser?.uid == expectedUserId) { "Signed-in user changed; refusing cross-user operation." }
         }
         return uid
     }
 
-    private fun userDoc(uid: String) = db.collection("users").document(uid)
+    private fun userDoc(uid: String) = db.collection(AppConfig.Firestore.COLLECTION_USERS).document(uid)
 
     fun observeUserProfile(userId: String): Flow<UserProfile?> = flow {
+        if (userId == GUEST_USER_ID) {
+            emitAll(guestProfile.asStateFlow())
+            return@flow
+        }
         val uid = requireUserId(userId)
         val docRef = userDoc(uid)
         emitAll(
@@ -74,8 +123,12 @@ class LevelUpRepository(
     }
 
     fun observeGoals(userId: String): Flow<List<DailyGoal>> = flow {
+        if (userId == GUEST_USER_ID) {
+            emitAll(guestGoals.asStateFlow())
+            return@flow
+        }
         val uid = requireUserId(userId)
-        val colRef = userDoc(uid).collection("goals")
+        val colRef = userDoc(uid).collection(AppConfig.Firestore.COLLECTION_GOALS)
         emitAll(
             colRef.snapshots()
                 .map { snapshot ->
@@ -99,8 +152,12 @@ class LevelUpRepository(
     }
 
     fun observeSessions(userId: String): Flow<List<WorkSession>> = flow {
+        if (userId == GUEST_USER_ID) {
+            emitAll(guestSessions.asStateFlow())
+            return@flow
+        }
         val uid = requireUserId(userId)
-        val colRef = userDoc(uid).collection("sessions")
+        val colRef = userDoc(uid).collection(AppConfig.Firestore.COLLECTION_SESSIONS)
         emitAll(
             colRef.snapshots()
                 .map { snapshot ->
@@ -124,8 +181,12 @@ class LevelUpRepository(
     }
 
     fun observeDayStatuses(userId: String): Flow<List<DayStatus>> = flow {
+        if (userId == GUEST_USER_ID) {
+            emitAll(guestDayStatuses.asStateFlow())
+            return@flow
+        }
         val uid = requireUserId(userId)
-        val colRef = userDoc(uid).collection("dayStatuses")
+        val colRef = userDoc(uid).collection(AppConfig.Firestore.COLLECTION_DAY_STATUSES)
         emitAll(
             colRef.snapshots()
                 .map { snapshot ->
@@ -148,33 +209,10 @@ class LevelUpRepository(
         )
     }
 
-    fun observeTaskLogs(userId: String): Flow<List<TaskLog>> = flow {
-        val uid = requireUserId(userId)
-        val colRef = userDoc(uid).collection("taskLogs")
-        emitAll(
-            colRef.orderBy("createdAt", Query.Direction.DESCENDING)
-                .snapshots()
-                .map { snapshot ->
-                    snapshot.toObjects(
-                        TaskLog::class.java,
-                        DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
-                    )
-                }
-                .catch { error ->
-                    val firestoreError = generateSequence(error) { it.cause }
-                        .filterIsInstance<FirebaseFirestoreException>()
-                        .firstOrNull()
-                    if (firestoreError == null && error is CancellationException) throw error
-                    val exceptionToLog = firestoreError ?: (error as? Exception)
-                    if (exceptionToLog != null && auth.currentUser?.uid == uid) {
-                        handleFirestoreError(exceptionToLog, OperationType.LIST, colRef.path)
-                    }
-                    throw error
-                }
-        )
-    }
-
     suspend fun ensureUserProfile(userId: String, displayName: String): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId"
         return try {
             val uid = requireUserId(userId)
@@ -212,6 +250,17 @@ class LevelUpRepository(
         darkModeEnabled: Boolean,
         hapticsEnabled: Boolean
     ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            val safeTarget = dailyTargetMinutes.coerceIn(30L, 960L)
+            val safeApps = shieldedApps.map { it.trim().take(40) }.filter { it.isNotEmpty() }.take(20)
+            guestProfile.value = guestProfile.value.copy(
+                dailyTargetMinutes = safeTarget,
+                shieldedApps = safeApps,
+                darkModeEnabled = darkModeEnabled,
+                hapticsEnabled = hapticsEnabled
+            )
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId"
         return try {
             val uid = requireUserId(userId)
@@ -245,6 +294,22 @@ class LevelUpRepository(
         category: String,
         tier: GoalTier
     ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            val trimmedTitle = title.trim().take(120)
+            require(trimmedTitle.isNotEmpty()) { "Goal title cannot be empty." }
+            val newGoal = DailyGoal(
+                id = "guest_goal_${UUID.randomUUID().toString().take(8)}",
+                userId = GUEST_USER_ID,
+                dateKey = dateKey,
+                title = trimmedTitle,
+                targetMinutes = targetMinutes.coerceIn(5, 600).toLong(),
+                category = category.trim().ifEmpty { "Deep Work" }.take(40),
+                tier = tier.name,
+                completed = false
+            )
+            guestGoals.value = guestGoals.value + newGoal
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/goals"
         return try {
             val uid = requireUserId(userId)
@@ -282,6 +347,12 @@ class LevelUpRepository(
         goalId: String,
         completed: Boolean
     ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            guestGoals.value = guestGoals.value.map {
+                if (it.id == goalId) it.copy(completed = completed) else it
+            }
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/goals/$goalId"
         return try {
             val uid = requireUserId(userId)
@@ -304,6 +375,10 @@ class LevelUpRepository(
     }
 
     suspend fun deleteGoal(userId: String, goalId: String): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            guestGoals.value = guestGoals.value.filter { it.id != goalId }
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/goals/$goalId"
         return try {
             val uid = requireUserId(userId)
@@ -332,6 +407,25 @@ class LevelUpRepository(
         goalId: String?,
         shieldActive: Boolean
     ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            val safeTitle = title.trim().take(120)
+            require(safeTitle.isNotEmpty()) { "Session title cannot be empty." }
+            val newSession = WorkSession(
+                id = "guest_session_${UUID.randomUUID().toString().take(8)}",
+                userId = GUEST_USER_ID,
+                dateKey = dateKey,
+                title = safeTitle,
+                category = category.trim().ifEmpty { "Deep Work" }.take(40),
+                startMinuteOfDay = startMinuteOfDay.coerceIn(0, 1439).toLong(),
+                durationMinutes = durationMinutes.coerceIn(1, 720).toLong(),
+                tags = tags.map { it.trim().take(30) }.filter { it.isNotEmpty() }.take(8),
+                subNotes = subNotes.trim().take(2000),
+                goalId = goalId,
+                shieldActive = shieldActive
+            )
+            guestSessions.value = guestSessions.value + newSession
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/sessions"
         return try {
             val uid = requireUserId(userId)
@@ -380,6 +474,12 @@ class LevelUpRepository(
         sessionId: String,
         subNotes: String
     ): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            guestSessions.value = guestSessions.value.map {
+                if (it.id == sessionId) it.copy(subNotes = subNotes.trim().take(2000)) else it
+            }
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/sessions/$sessionId"
         return try {
             val uid = requireUserId(userId)
@@ -403,6 +503,10 @@ class LevelUpRepository(
     }
 
     suspend fun deleteSession(userId: String, sessionId: String): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            guestSessions.value = guestSessions.value.filter { it.id != sessionId }
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/sessions/$sessionId"
         return try {
             val uid = requireUserId(userId)
@@ -420,6 +524,19 @@ class LevelUpRepository(
     }
 
     suspend fun applyStreakFreeze(userId: String, dateKey: String): Result<Unit> {
+        if (userId == GUEST_USER_ID) {
+            if (guestProfile.value.streakFreezes <= 0L) {
+                return Result.failure(IllegalStateException("No streak freezes remaining."))
+            }
+            guestProfile.value = guestProfile.value.copy(streakFreezes = guestProfile.value.streakFreezes - 1L)
+            guestDayStatuses.value = guestDayStatuses.value + DayStatus(
+                id = dateKey,
+                userId = GUEST_USER_ID,
+                dateKey = dateKey,
+                freezeUsed = true
+            )
+            return Result.success(Unit)
+        }
         var docPath = "users/$userId/dayStatuses/$dateKey"
         return try {
             val uid = requireUserId(userId)
@@ -456,59 +573,6 @@ class LevelUpRepository(
             throw e
         } catch (e: Exception) {
             handleFirestoreError(e, OperationType.WRITE, docPath)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun addTaskLog(
-        userId: String,
-        workDone: String,
-        category: String,
-        durationMinutes: Int?
-    ): Result<Unit> {
-        var docPath = "users/$userId/taskLogs"
-        return try {
-            val uid = requireUserId(userId)
-            val safeWorkDone = workDone.trim().take(500)
-            require(safeWorkDone.isNotEmpty()) { "Work description cannot be empty." }
-            val safeCategory = category.trim().ifEmpty { "Deep Work" }.take(40)
-            val safeDuration = durationMinutes?.coerceIn(1, 720)?.toLong()
-
-            val docRef = userDoc(uid).collection("taskLogs").document()
-            docPath = docRef.path
-
-            val payload = mapOf(
-                "userId" to uid,
-                "workDone" to safeWorkDone,
-                "category" to safeCategory,
-                "durationMinutes" to safeDuration,
-                "createdAt" to FieldValue.serverTimestamp(),
-                "updatedAt" to FieldValue.serverTimestamp()
-            ).filterValues { it != null }
-
-            docRef.set(payload).await()
-            Result.success(Unit)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            handleFirestoreError(e, OperationType.CREATE, docPath)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun deleteTaskLog(userId: String, logId: String): Result<Unit> {
-        var docPath = "users/$userId/taskLogs/$logId"
-        return try {
-            val uid = requireUserId(userId)
-            require(logId.isNotBlank()) { "Task log ID must not be blank." }
-            val docRef = userDoc(uid).collection("taskLogs").document(logId)
-            docPath = docRef.path
-            docRef.delete().await()
-            Result.success(Unit)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            handleFirestoreError(e, OperationType.DELETE, docPath)
             Result.failure(e)
         }
     }

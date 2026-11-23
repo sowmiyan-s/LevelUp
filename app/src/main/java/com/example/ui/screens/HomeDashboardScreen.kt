@@ -51,13 +51,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.foundation.Image
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import com.example.R
 import com.example.model.AiCoachState
 import com.example.model.AiPlanSuggestion
 import com.example.model.AiSuggestedGoal
@@ -68,9 +64,6 @@ import com.example.model.UiState
 import com.example.model.WorkCategory
 import com.example.ui.components.HeroAiSection
 import com.example.ui.components.InteractiveFocusDial
-import com.example.ui.components.LevelUpBrandBadge
-import com.example.ui.components.bioTechGridPattern
-import com.example.ui.components.categoryIconRes
 import com.example.ui.theme.Amber500
 import com.example.ui.theme.Crimson500
 import com.example.ui.theme.Cyan400
@@ -130,21 +123,17 @@ fun HomeDashboardScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        LevelUpBrandBadge(size = 42.dp)
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "LEVEL UP",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            Text(
-                                text = "Focus Dashboard",
-                                style = MaterialTheme.typography.headlineLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
+                    Column {
+                        Text(
+                            text = "LEVEL UP",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = "Focus Dashboard",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -287,30 +276,27 @@ fun HomeDashboardScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .bioTechGridPattern()
-                            .padding(16.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    shape = CircleShape,
-                                    border = BorderStroke(
-                                        1.5.dp,
-                                        if (isShieldLive) Mint400 else MaterialTheme.colorScheme.outline
-                                    ),
-                                    modifier = Modifier.size(44.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isShieldLive) Emerald500.copy(alpha = 0.22f)
+                                            else MaterialTheme.colorScheme.surfaceVariant
+                                        ),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.img_focus_shield_emblem),
-                                        contentDescription = "Focus Shield emblem",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
+                                    Icon(
+                                        imageVector = Icons.Rounded.Shield,
+                                        contentDescription = null,
+                                        tint = if (isShieldLive) Mint400 else MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
@@ -546,12 +532,6 @@ private fun GoalRowCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
-                    Icon(
-                        painter = painterResource(id = categoryIconRes(goal.category)),
-                        contentDescription = null,
-                        tint = Mint400,
-                        modifier = Modifier.size(14.dp)
-                    )
                     Text(
                         text = "${goal.targetMinutes}m • ${goal.category}",
                         style = MaterialTheme.typography.labelSmall,
